@@ -1,18 +1,26 @@
 import { Router } from 'express';
 import { albumController } from './album.controller';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import { authMiddleware, authorize } from '../../shared/middleware/auth.middleware';
+import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { createAlbumSchema, updateAlbumSchema, addSongToAlbumSchema } from './album.schema';
 
-const router = Router();
+export const albumRouter = Router();
 
-router.get('/', albumController.getAlbums);
-router.get('/:id', albumController.getAlbumById);
-router.post('/', authenticate, authorize(Role.ARTIST, Role.ADMIN), albumController.createAlbum);
-router.patch('/:id', authenticate, authorize(Role.ARTIST, Role.ADMIN), albumController.updateAlbum);
-router.delete('/:id', authenticate, authorize(Role.ARTIST, Role.ADMIN), albumController.deleteAlbum);
-router.post('/:id/songs', authenticate, authorize(Role.ARTIST, Role.ADMIN), albumController.addSongToAlbum);
-router.delete('/:id/songs/:songId', authenticate, authorize(Role.ARTIST, Role.ADMIN), albumController.removeSongFromAlbum);
-router.post('/:id/follow', authenticate, albumController.followAlbum);
-router.delete('/:id/follow', authenticate, albumController.unfollowAlbum);
+// Public
+albumRouter.get('/:id', albumController.getAlbum);
 
-export { router as albumRouter };
+// Protected (ARTIST only cho thao tác tạo/sửa)
+albumRouter.use(authMiddleware);
+
+// Album CRUD by ARTIST
+albumRouter.post('/', authorize('ARTIST'), validateRequest(createAlbumSchema), albumController.createAlbum);
+albumRouter.patch('/:id', authorize('ARTIST', 'ADMIN'), validateRequest(updateAlbumSchema), albumController.updateAlbum);
+albumRouter.delete('/:id', authorize('ARTIST', 'ADMIN'), albumController.deleteAlbum);
+
+// Tính năng Social Follow
+albumRouter.post('/:id/follow', albumController.followAlbum);
+albumRouter.delete('/:id/follow', albumController.unfollowAlbum);
+
+// Quan hệ Album - Song
+albumRouter.post('/:id/songs', authorize('ARTIST'), validateRequest(addSongToAlbumSchema), albumController.addSong);
+albumRouter.delete('/:id/songs/:songId', authorize('ARTIST'), albumController.removeSong);

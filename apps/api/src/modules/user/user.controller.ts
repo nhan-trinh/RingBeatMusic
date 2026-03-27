@@ -1,37 +1,36 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { UserService } from './user.service';
 import { sendSuccess } from '../../shared/utils/response';
+import { catchAsync } from '../../shared/utils/catch-async';
 
 export const userController = {
-  // GET /api/v1/users/me
-  getMe: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, null, 'OK');
-  },
-  // PATCH /api/v1/users/me
-  updateMe: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, null, 'Cập nhật thành công');
-  },
-  // DELETE /api/v1/users/me
-  deleteMe: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, null, 'Tài khoản đã được xóa');
-  },
-  // POST /api/v1/users/me/avatar
-  uploadAvatar: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, null, 'Avatar đã được cập nhật');
-  },
-  // POST /api/v1/users/me/change-password
-  changePassword: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, null, 'Mật khẩu đã được đổi');
-  },
-  // GET /api/v1/users/me/liked-songs
-  getLikedSongs: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, [], 'OK');
-  },
-  // GET /api/v1/users/me/followed-artists
-  getFollowedArtists: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, [], 'OK');
-  },
-  // GET /api/v1/users/:id
-  getUserById: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    sendSuccess(res, null, 'OK');
-  },
+  getProfile: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await UserService.getProfile(user.id);
+    sendSuccess(res, result, 'Lấy thông tin người dùng thành công');
+  }),
+
+  updateProfile: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await UserService.updateProfile(user.id, req.body);
+    sendSuccess(res, result, 'Cập nhật thông tin thành công');
+  }),
+
+  changePassword: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await UserService.changePassword(user.id, req.body);
+    sendSuccess(res, result, 'Đổi mật khẩu thành công');
+  }),
+
+  uploadAvatar: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await UserService.uploadAvatar(user.id, req.file as Express.Multer.File);
+    sendSuccess(res, result, 'Cập nhật avatar thành công');
+  }),
+
+  getLibrary: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await UserService.getLibrary(user.id);
+    sendSuccess(res, result, 'Thư viện âm nhạc');
+  }),
 };

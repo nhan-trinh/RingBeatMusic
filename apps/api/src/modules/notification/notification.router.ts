@@ -1,14 +1,12 @@
 import { Router } from 'express';
 import { notificationController } from './notification.controller';
-import { authenticate } from '../../shared/middleware/auth.middleware';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
 
-const router = Router();
+export const notificationRouter = Router();
 
-router.use(authenticate);
+notificationRouter.use(authMiddleware);
 
-router.get('/', notificationController.getNotifications);
-router.patch('/read-all', notificationController.markAllAsRead);
-router.patch('/:id/read', notificationController.markAsRead);
-router.delete('/:id', notificationController.deleteNotification);
-
-export { router as notificationRouter };
+notificationRouter.get('/', notificationController.getNotifications);
+notificationRouter.get('/unread-count', notificationController.getUnreadCount);
+notificationRouter.patch('/read-all', notificationController.markAllAsRead);
+notificationRouter.patch('/:id/read', notificationController.markAsRead);

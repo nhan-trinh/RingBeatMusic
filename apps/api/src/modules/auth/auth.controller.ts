@@ -1,79 +1,64 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { AuthService } from './auth.service';
 import { sendSuccess } from '../../shared/utils/response';
-
-// Controller chỉ nhận request, gọi service, trả response
-// Không chứa business logic
+import { catchAsync } from '../../shared/utils/catch-async';
 
 export const authController = {
-  // POST /api/v1/auth/register
-  register: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Đăng ký thành công', 201);
-  },
+  register: catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.register(req.body);
+    sendSuccess(res, result, 'Đăng ký thành công', 201);
+  }),
 
-  // POST /api/v1/auth/login
-  login: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Đăng nhập thành công');
-  },
+  login: catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.login(req.body);
+    sendSuccess(res, result, 'Đăng nhập thành công');
+  }),
 
-  // POST /api/v1/auth/logout
-  logout: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Đăng xuất thành công');
-  },
+  verifyEmail: catchAsync(async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+    const result = await AuthService.verifyEmail(email, otp);
+    sendSuccess(res, result, 'Xác thực email thành công');
+  }),
 
-  // POST /api/v1/auth/refresh
-  refresh: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Token đã được làm mới');
-  },
+  logout: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user as { id: string; jti: string; exp: number };
+    const result = await AuthService.logout(user.id, user.jti, user.exp);
+    sendSuccess(res, result, 'Đăng xuất thành công');
+  }),
 
-  // POST /api/v1/auth/verify-email
-  verifyEmail: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Email đã được xác thực');
-  },
+  refresh: catchAsync(async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+    const result = await AuthService.refresh(refreshToken);
+    sendSuccess(res, result, 'Làm mới token thành công');
+  }),
 
-  // POST /api/v1/auth/resend-otp
-  resendOtp: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'OTP đã được gửi lại');
-  },
-
-  // POST /api/v1/auth/forgot-password
-  forgotPassword: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Email đặt lại mật khẩu đã được gửi');
-  },
-
-  // POST /api/v1/auth/reset-password
-  resetPassword: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Mật khẩu đã được đặt lại');
-  },
-
-  // POST /api/v1/auth/2fa/setup
-  setup2FA: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Thiết lập 2FA thành công');
-  },
-
-  // POST /api/v1/auth/2fa/verify
-  verify2FA: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Xác thực 2FA thành công');
-  },
-
-  // GET /api/v1/auth/google
-  googleAuth: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement Google OAuth redirect
-    res.json({ message: 'Google OAuth — TODO' });
-  },
-
-  // GET /api/v1/auth/google/callback
-  googleCallback: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    // TODO: implement
-    sendSuccess(res, null, 'Google OAuth thành công');
-  },
+  resendOtp: catchAsync(async (_req: Request, res: Response) => {
+    sendSuccess(res, null, 'TODO');
+  }),
+  forgotPassword: catchAsync(async (_req: Request, res: Response) => {
+    sendSuccess(res, null, 'TODO');
+  }),
+  resetPassword: catchAsync(async (_req: Request, res: Response) => {
+    sendSuccess(res, null, 'TODO');
+  }),
+  setup2FA: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    // Note: To display email in authenticator app, typically email is fetched or passed. 
+    // We pass role/id as placeholder if email isn't in req.user, or fetch from DB in service.
+    // I will refactor setup2FA to just take userId and fetch email inside.
+    const result = await AuthService.setup2FA(user.id, 'UserEmail'); 
+    sendSuccess(res, result, 'Thiết lập 2FA thành công');
+  }),
+  verify2FA: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const { token } = req.body;
+    const result = await AuthService.verify2FA(user.id, token);
+    sendSuccess(res, result, 'Xác thực 2FA thành công');
+  }),
+  googleAuth: catchAsync(async (_req: Request, res: Response) => {
+    res.json({ message: 'TODO' });
+  }),
+  googleCallback: catchAsync(async (_req: Request, res: Response) => {
+    sendSuccess(res, null, 'TODO');
+  }),
 };

@@ -11,6 +11,8 @@ declare global {
       user?: {
         id: string;
         role: Role;
+        jti?: string;
+        exp?: number;
       };
     }
   }
@@ -19,12 +21,13 @@ declare global {
 interface JwtPayload {
   sub: string;
   role: Role;
+  jti?: string;
   iat: number;
   exp: number;
 }
 
 // Middleware xác thực JWT Access Token
-export const authenticate = (
+export const authMiddleware = (
   req: Request,
   _res: Response,
   next: NextFunction
@@ -39,7 +42,7 @@ export const authenticate = (
 
   try {
     const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as JwtPayload;
-    req.user = { id: payload.sub, role: payload.role };
+    req.user = { id: payload.sub, role: payload.role, jti: payload.jti, exp: payload.exp };
     next();
   } catch {
     next(new AppError('Token không hợp lệ hoặc đã hết hạn', 401, ErrorCodes.TOKEN_EXPIRED));
@@ -60,3 +63,5 @@ export const authorize = (...roles: Role[]) => {
     next();
   };
 };
+
+export const authenticate = authMiddleware;

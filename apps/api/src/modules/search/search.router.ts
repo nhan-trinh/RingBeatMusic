@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { searchController } from './search.controller';
-import { authenticate } from '../../shared/middleware/auth.middleware';
+import { authMiddleware, authorize } from '../../shared/middleware/auth.middleware';
 
-const router = Router();
+export const searchRouter = Router();
 
-router.get('/', searchController.search);
-router.get('/genres', searchController.getGenres);
-router.get('/top-charts', searchController.getTopCharts);
-router.get('/discover-weekly', authenticate, searchController.getDiscoverWeekly);
+// Public routes
+searchRouter.get('/', searchController.globalSearch);
+searchRouter.get('/top-charts', searchController.getTopCharts);
 
-export { router as searchRouter };
+// Protected routes
+searchRouter.use(authMiddleware);
+searchRouter.get('/discover-weekly', searchController.getDiscoverWeekly);
+
+// Admin
+searchRouter.post('/sync', authorize('ADMIN'), searchController.syncIndexes);

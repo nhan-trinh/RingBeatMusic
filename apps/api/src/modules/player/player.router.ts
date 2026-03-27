@@ -1,16 +1,19 @@
 import { Router } from 'express';
 import { playerController } from './player.controller';
-import { authenticate } from '../../shared/middleware/auth.middleware';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
 
-const router = Router();
+export const playerRouter = Router();
 
-router.use(authenticate);
+playerRouter.use(authMiddleware);
 
-router.get('/queue', playerController.getQueue);
-router.put('/queue', playerController.setQueue);
-router.delete('/queue', playerController.clearQueue);
-router.get('/history', playerController.getHistory);
-router.post('/history', playerController.addToHistory);
-router.get('/recently-played', playerController.getRecentlyPlayed);
+// MongoDB Logs
+playerRouter.post('/play-count', playerController.recordPlay);
+playerRouter.get('/history', playerController.getHistory);
+playerRouter.get('/recently-played', playerController.getRecentlyPlayed);
 
-export { router as playerRouter };
+// Redis Queue
+playerRouter.get('/queue', playerController.getQueue);
+playerRouter.post('/queue', playerController.updateQueue); 
+
+// Skip Control (Dành cho Web Player tự kiểm soát luồng)
+playerRouter.get('/check-skip', playerController.checkSkipLimit);

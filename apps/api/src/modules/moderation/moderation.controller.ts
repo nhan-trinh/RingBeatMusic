@@ -1,21 +1,48 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { ModerationService } from './moderation.service';
 import { sendSuccess } from '../../shared/utils/response';
+import { catchAsync } from '../../shared/utils/catch-async';
 
 export const moderationController = {
-  // GET /api/v1/moderation/pending-songs
-  getPendingSongs: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, [], 'OK'); },
-  // PATCH /api/v1/moderation/songs/:id/approve
-  approveSong: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Bài hát đã được duyệt'); },
-  // PATCH /api/v1/moderation/songs/:id/reject
-  rejectSong: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Bài hát đã bị từ chối'); },
-  // GET /api/v1/moderation/reports
-  getReports: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, [], 'OK'); },
-  // POST /api/v1/moderation/reports
-  createReport: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Report đã được gửi', 201); },
-  // PATCH /api/v1/moderation/reports/:id/resolve
-  resolveReport: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Report đã được xử lý'); },
-  // PATCH /api/v1/moderation/reports/:id/dismiss
-  dismissReport: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Report đã được bỏ qua'); },
-  // POST /api/v1/moderation/users/:id/strike
-  issueStrike: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã cảnh cáo tài khoản'); },
+  getPendingSongs: catchAsync(async (_req: Request, res: Response) => {
+    const result = await ModerationService.getPendingSongs();
+    sendSuccess(res, result, 'Danh sách bài hát chờ duyệt');
+  }),
+
+  approveSong: catchAsync(async (req: Request, res: Response) => {
+    const moderator = req.user!;
+    const result = await ModerationService.approveSong(moderator.id, req.params.id);
+    sendSuccess(res, result);
+  }),
+
+  rejectSong: catchAsync(async (req: Request, res: Response) => {
+    const moderator = req.user!;
+    const { reason } = req.body;
+    const result = await ModerationService.rejectSong(moderator.id, req.params.id, reason);
+    sendSuccess(res, result);
+  }),
+
+  getReports: catchAsync(async (req: Request, res: Response) => {
+    const result = await ModerationService.getReports(req.query.status as string);
+    sendSuccess(res, result, 'Danh sách report');
+  }),
+
+  resolveReport: catchAsync(async (req: Request, res: Response) => {
+    const moderator = req.user!;
+    const result = await ModerationService.resolveReport(moderator.id, req.params.id, 'RESOLVED');
+    sendSuccess(res, result);
+  }),
+
+  dismissReport: catchAsync(async (req: Request, res: Response) => {
+    const moderator = req.user!;
+    const result = await ModerationService.resolveReport(moderator.id, req.params.id, 'DISMISSED');
+    sendSuccess(res, result);
+  }),
+
+  issueStrike: catchAsync(async (req: Request, res: Response) => {
+    const moderator = req.user!;
+    const { reason, note } = req.body;
+    const result = await ModerationService.issueStrike(moderator.id, req.params.id, reason, note);
+    sendSuccess(res, result, 'Đã cấp strike');
+  }),
 };

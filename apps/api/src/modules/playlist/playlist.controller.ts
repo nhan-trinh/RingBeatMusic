@@ -1,15 +1,62 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { PlaylistService } from './playlist.service';
 import { sendSuccess } from '../../shared/utils/response';
+import { catchAsync } from '../../shared/utils/catch-async';
 
 export const playlistController = {
-  getPlaylists: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, [], 'OK'); },
-  getPlaylistById: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'OK'); },
-  createPlaylist: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Playlist đã được tạo', 201); },
-  updatePlaylist: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Playlist đã được cập nhật'); },
-  deletePlaylist: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Playlist đã được xóa'); },
-  addSong: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã thêm bài hát'); },
-  removeSong: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã xóa bài hát'); },
-  reorderSongs: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã sắp xếp lại'); },
-  addCollaborator: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã thêm cộng tác viên'); },
-  removeCollaborator: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã xóa cộng tác viên'); },
+  create: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlaylistService.createPlaylist(user.id, req.body, user.role);
+    sendSuccess(res, result, 'Playlist được tạo thành công', 201);
+  }),
+
+  getMine: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlaylistService.getMine(user.id);
+    sendSuccess(res, result, 'Playlist cá nhân');
+  }),
+
+  getDetails: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+    const result = await PlaylistService.getPlaylistDetails(req.params.id, user?.id);
+    sendSuccess(res, result, 'Playlist details');
+  }),
+
+  update: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlaylistService.updatePlaylist(req.params.id, user.id, req.body);
+    sendSuccess(res, result, 'Cập nhật playlist thành công');
+  }),
+
+  delete: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlaylistService.deletePlaylist(req.params.id, user.id);
+    sendSuccess(res, result, 'Xóa playlist thành công');
+  }),
+
+  addSong: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const { songId, position } = req.body;
+    const result = await PlaylistService.addSong(req.params.id, user.id, songId, position);
+    sendSuccess(res, result, 'Đã thêm bài hát');
+  }),
+
+  removeSong: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlaylistService.removeSong(req.params.id, user.id, req.params.songId);
+    sendSuccess(res, result, 'Đã gỡ bài hát');
+  }),
+
+  reorderSongs: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlaylistService.reorderSongs(req.params.id, user.id, req.body.songs);
+    sendSuccess(res, result, 'Sắp xếp hoàn tất');
+  }),
+
+  hideSong: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const { songId, localPlaylistId } = req.body;
+    const result = await PlaylistService.hideSong(user.id, songId, localPlaylistId);
+    sendSuccess(res, result);
+  })
 };

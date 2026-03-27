@@ -45,6 +45,15 @@ const envSchema = z.object({
 
   // Frontend CORS
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+  BACKEND_URL: z.string().default('http://localhost:3001'),
+
+  // JWT alias used in socket auth
+  JWT_SECRET: z.string().optional(),
+
+  // Cloudinary
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
 
   // Sentry
   SENTRY_DSN: z.string().optional(),

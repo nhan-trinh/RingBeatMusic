@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  # PostgreSQL — Nguồn dữ liệu chính (Prisma)
+  postgres:
+    image: postgres:16-alpine
+    container_name: spotify_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-spotify}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spotify_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-spotify_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spotify"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB — Lịch sử nghe, notifications, logs
+  mongodb:
+    image: mongo:7-jammy
+    container_name: spotify_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-spotify}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-spotify_secret}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-spotify_db}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis — Cache, session, queue, token blacklist
+  redis:
+    image: redis:7-alpine
+    container_name: spotify_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-spotify_secret}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Meilisearch — Full-text search
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: spotify_meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-spotify_meili_key}
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+  meili_data:

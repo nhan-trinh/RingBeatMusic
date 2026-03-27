@@ -1,20 +1,25 @@
 import { Router } from 'express';
 import { podcastController } from './podcast.controller';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import { authMiddleware, authorize } from '../../shared/middleware/auth.middleware';
 
-const router = Router();
+export const podcastRouter = Router();
 
-router.get('/shows', podcastController.getShows);
-router.get('/shows/:id', podcastController.getShowById);
-router.post('/shows', authenticate, authorize(Role.PODCAST_HOST, Role.ADMIN), podcastController.createShow);
-router.patch('/shows/:id', authenticate, authorize(Role.PODCAST_HOST, Role.ADMIN), podcastController.updateShow);
-router.delete('/shows/:id', authenticate, authorize(Role.PODCAST_HOST, Role.ADMIN), podcastController.deleteShow);
-router.get('/shows/:id/episodes', podcastController.getEpisodes);
-router.post('/shows/:id/episodes', authenticate, authorize(Role.PODCAST_HOST, Role.ADMIN), podcastController.createEpisode);
-router.patch('/shows/:showId/episodes/:id', authenticate, authorize(Role.PODCAST_HOST, Role.ADMIN), podcastController.updateEpisode);
-router.delete('/shows/:showId/episodes/:id', authenticate, authorize(Role.PODCAST_HOST, Role.ADMIN), podcastController.deleteEpisode);
-router.post('/shows/:id/subscribe', authenticate, podcastController.subscribeShow);
-router.delete('/shows/:id/subscribe', authenticate, podcastController.unsubscribeShow);
+// Public
+podcastRouter.get('/shows', podcastController.listShows);
+podcastRouter.get('/shows/:id', podcastController.getShow);
+podcastRouter.get('/episodes/:id', podcastController.getEpisode);
 
-export { router as podcastRouter };
+// Auth required
+podcastRouter.use(authMiddleware);
+
+podcastRouter.post('/shows/:id/subscribe', podcastController.subscribe);
+podcastRouter.delete('/shows/:id/subscribe', podcastController.unsubscribe);
+podcastRouter.get('/episodes/:id/stream', podcastController.streamEpisode);
+podcastRouter.get('/me/analytics', podcastController.getAnalytics);
+
+// Podcast Host only
+podcastRouter.post('/shows', authorize('PODCAST_HOST', 'ADMIN'), podcastController.createShow);
+podcastRouter.patch('/shows/:id', authorize('PODCAST_HOST', 'ADMIN'), podcastController.updateShow);
+podcastRouter.post('/shows/:showId/episodes', authorize('PODCAST_HOST', 'ADMIN'), podcastController.createEpisode);
+podcastRouter.patch('/episodes/:id', authorize('PODCAST_HOST', 'ADMIN'), podcastController.updateEpisode);
+podcastRouter.delete('/episodes/:id', authorize('PODCAST_HOST', 'ADMIN'), podcastController.deleteEpisode);

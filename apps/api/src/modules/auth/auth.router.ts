@@ -1,30 +1,29 @@
 import { Router } from 'express';
 import { authController } from './auth.controller';
+import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
+import { 
+  registerSchema, 
+  loginSchema, 
+  verifyEmailSchema, 
+  refreshSchema 
+} from './auth.schema';
 
-// Auth routes — không cần authenticate (công khai hoặc dùng refreshToken)
+export const authRouter = Router();
 
-const router = Router();
+// Public routes (không cần đăng nhập)
+authRouter.post('/register', validateRequest(registerSchema), authController.register);
+authRouter.post('/login', validateRequest(loginSchema), authController.login);
+authRouter.post('/verify-email', validateRequest(verifyEmailSchema), authController.verifyEmail);
+authRouter.post('/refresh', validateRequest(refreshSchema), authController.refresh);
 
-// Đăng ký / Đăng nhập
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
-router.post('/refresh', authController.refresh);
+// Oauth
+authRouter.get('/google', authController.googleAuth);
+authRouter.get('/google/callback', authController.googleCallback);
 
-// Xác thực email
-router.post('/verify-email', authController.verifyEmail);
-router.post('/resend-otp', authController.resendOtp);
+// Protected routes (cần Access Token)
+authRouter.use(authMiddleware);
 
-// Quên / Đặt lại mật khẩu
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
-
-// 2FA
-router.post('/2fa/setup', authController.setup2FA);
-router.post('/2fa/verify', authController.verify2FA);
-
-// Google OAuth
-router.get('/google', authController.googleAuth);
-router.get('/google/callback', authController.googleCallback);
-
-export { router as authRouter };
+authRouter.post('/logout', authController.logout);
+authRouter.post('/2fa/setup', authController.setup2FA);
+authRouter.post('/2fa/verify', authController.verify2FA);

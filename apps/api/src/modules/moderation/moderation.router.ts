@@ -1,22 +1,19 @@
 import { Router } from 'express';
 import { moderationController } from './moderation.controller';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
+import { authorize } from '../../shared/middleware/auth.middleware';
 
-const router = Router();
+export const moderationRouter = Router();
 
-// Bất kỳ user đã đăng nhập đều có thể report
-router.post('/reports', authenticate, moderationController.createReport);
+moderationRouter.use(authMiddleware);
+moderationRouter.use(authorize('MODERATOR', 'ADMIN'));
 
-// Chỉ Moderator và Admin
-const modGuard = [authenticate, authorize(Role.MODERATOR, Role.ADMIN)];
+moderationRouter.get('/songs/pending', moderationController.getPendingSongs);
+moderationRouter.post('/songs/:id/approve', moderationController.approveSong);
+moderationRouter.post('/songs/:id/reject', moderationController.rejectSong);
 
-router.get('/pending-songs', ...modGuard, moderationController.getPendingSongs);
-router.patch('/songs/:id/approve', ...modGuard, moderationController.approveSong);
-router.patch('/songs/:id/reject', ...modGuard, moderationController.rejectSong);
-router.get('/reports', ...modGuard, moderationController.getReports);
-router.patch('/reports/:id/resolve', ...modGuard, moderationController.resolveReport);
-router.patch('/reports/:id/dismiss', ...modGuard, moderationController.dismissReport);
-router.post('/users/:id/strike', ...modGuard, moderationController.issueStrike);
+moderationRouter.get('/reports', moderationController.getReports);
+moderationRouter.post('/reports/:id/resolve', moderationController.resolveReport);
+moderationRouter.post('/reports/:id/dismiss', moderationController.dismissReport);
 
-export { router as moderationRouter };
+moderationRouter.post('/users/:id/strike', moderationController.issueStrike);

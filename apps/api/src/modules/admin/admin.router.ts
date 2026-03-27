@@ -1,35 +1,36 @@
 import { Router } from 'express';
 import { adminController } from './admin.controller';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import { authMiddleware, authorize } from '../../shared/middleware/auth.middleware';
 
-const router = Router();
+export const adminRouter = Router();
 
-// Tất cả admin routes yêu cầu ADMIN role
-router.use(authenticate, authorize(Role.ADMIN));
+adminRouter.use(authMiddleware);
+adminRouter.use(authorize('ADMIN'));
 
-// Dashboard
-router.get('/dashboard', adminController.getDashboardStats);
+// Users
+adminRouter.get('/users', adminController.getUsers);
+adminRouter.get('/users/:id', adminController.getUserById);
+adminRouter.patch('/users/:id/role', adminController.changeRole);
+adminRouter.post('/users/:id/ban', adminController.banUser);
+adminRouter.post('/users/:id/unban', adminController.unbanUser);
+adminRouter.post('/users/:id/reset-password', adminController.resetPassword);
 
-// User management
-router.get('/users', adminController.getUsers);
-router.get('/users/:id', adminController.getUserById);
-router.patch('/users/:id/ban', adminController.banUser);
-router.patch('/users/:id/unban', adminController.unbanUser);
-router.patch('/users/:id/role', adminController.changeUserRole);
+// Content
+adminRouter.get('/songs', adminController.getAllSongs);
+adminRouter.delete('/songs/:id', adminController.deleteSong);
+adminRouter.post('/artists/:id/verify', adminController.verifyArtist);
+adminRouter.patch('/playlists/:id/feature', adminController.featurePlaylist);
+adminRouter.patch('/playlists/:id/pin', adminController.pinPlaylist);
 
-// Content management
-router.patch('/songs/:id', adminController.updateSong);
-router.delete('/songs/:id', adminController.deleteSong);
-router.post('/genres', adminController.createGenre);
-router.patch('/genres/:id', adminController.updateGenre);
-router.delete('/genres/:id', adminController.deleteGenre);
-router.patch('/artists/:id/verify', adminController.verifyArtist);
-router.patch('/playlists/:id/feature', adminController.featurePlaylist);
+// Subscriptions / Payments
+adminRouter.get('/subscriptions', adminController.getAllSubscriptions);
+adminRouter.get('/payments', adminController.getAllPayments);
+adminRouter.post('/payments/:id/refund', adminController.refundPayment);
 
-// Audit & Config
-router.get('/audit-logs', adminController.getAuditLogs);
-router.get('/config', adminController.getSystemConfig);
-router.patch('/config', adminController.updateSystemConfig);
+// Audit
+adminRouter.get('/audit-logs', adminController.getAuditLogs);
 
-export { router as adminRouter };
+// Analytics
+adminRouter.get('/analytics/overview', adminController.getOverview);
+adminRouter.get('/analytics/top-songs', adminController.getTopSongs);
+adminRouter.get('/analytics/top-artists', adminController.getTopArtists);

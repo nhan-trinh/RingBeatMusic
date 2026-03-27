@@ -1,15 +1,20 @@
 import { Router } from 'express';
 import { subscriptionController } from './subscription.controller';
-import { authenticate } from '../../shared/middleware/auth.middleware';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
+import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { checkoutSchema } from './subscription.schema';
 
-const router = Router();
+export const subscriptionRouter = Router();
 
-router.get('/plans', subscriptionController.getPlans);
-router.get('/my', authenticate, subscriptionController.getMySubscription);
-router.post('/payment', authenticate, subscriptionController.createPayment);
-router.get('/vnpay-return', subscriptionController.vnpayReturn);
-router.post('/vnpay-webhook', subscriptionController.vnpayWebhook);
-router.delete('/my', authenticate, subscriptionController.cancelSubscription);
-router.get('/my/invoices', authenticate, subscriptionController.getInvoices);
+// Public — không cần đăng nhập
+subscriptionRouter.get('/plans', subscriptionController.getPlans);
+subscriptionRouter.get('/vnpay/callback', subscriptionController.handleCallback);
+subscriptionRouter.post('/vnpay/webhook', subscriptionController.handleWebhook);
 
-export { router as subscriptionRouter };
+// Protected
+subscriptionRouter.use(authMiddleware);
+subscriptionRouter.get('/me', subscriptionController.getMySubscription);
+subscriptionRouter.post('/checkout', validateRequest(checkoutSchema), subscriptionController.createCheckout);
+subscriptionRouter.post('/cancel', subscriptionController.cancelAutoRenew);
+subscriptionRouter.get('/invoices', subscriptionController.getInvoices);
+subscriptionRouter.get('/invoices/:id', subscriptionController.getInvoiceById);

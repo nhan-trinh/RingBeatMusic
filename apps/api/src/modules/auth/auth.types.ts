@@ -1,14 +1,16 @@
-// Types cho module Auth
-
-export interface AuthTokens {
+export interface IAuthResponse {
   accessToken: string;
   refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    avatarUrl: string | null;
+  };
 }
 
-export interface JwtPayload {
-  sub: string;   // user id
-  role: string;
-  iat: number;
-  exp: number;
-  jti?: string;  // JWT ID — dùng cho token blacklist
+export interface ITwoFactorResponse {
+  requiresTwoFactor: true;
+  tempToken: string;
 }

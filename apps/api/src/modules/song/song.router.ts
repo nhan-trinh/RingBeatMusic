@@ -1,24 +1,23 @@
 import { Router } from 'express';
 import { songController } from './song.controller';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import { authMiddleware, authorize } from '../../shared/middleware/auth.middleware';
+import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { createSongSchema, streamSongSchema } from './song.schema';
 
-const router = Router();
+export const songRouter = Router();
 
-// Public
-router.get('/', songController.getSongs);
-router.get('/:id', songController.getSongById);
+// Publicly available (but play tracking and streaming requires auth technically)
+songRouter.get('/', songController.getAll);
+songRouter.get('/artist/:artistId', songController.getArtistSongs);
 
-// Artist only
-router.post('/upload-url', authenticate, authorize(Role.ARTIST), songController.getUploadUrl);
-router.post('/', authenticate, authorize(Role.ARTIST), songController.createSong);
-router.post('/:id/upload-complete', authenticate, authorize(Role.ARTIST), songController.uploadComplete);
-router.patch('/:id', authenticate, authorize(Role.ARTIST, Role.ADMIN), songController.updateSong);
-router.delete('/:id', authenticate, authorize(Role.ARTIST, Role.ADMIN), songController.deleteSong);
+// Protected routes (Require login)
+songRouter.use(authMiddleware);
 
-// Authenticated users
-router.post('/:id/like', authenticate, songController.likeSong);
-router.delete('/:id/like', authenticate, songController.unlikeSong);
-router.post('/:id/hide', authenticate, songController.hideSong);
+songRouter.get('/:id/stream', validateRequest(streamSongSchema), songController.getStreamUrl);
+songRouter.post('/:id/play', songController.recordPlay);
+songRouter.post('/:id/like', songController.likeSong);
+songRouter.delete('/:id/like', songController.unlikeSong);
 
-export { router as songRouter };
+// Quản lý riêng của ARTIST
+songRouter.post('/', authorize('ARTIST'), validateRequest(createSongSchema), songController.createMetadata);
+songRouter.post('/:id/upload-complete', authorize('ARTIST'), songController.uploadComplete);

@@ -1,18 +1,27 @@
 import { Router } from 'express';
 import { artistController } from './artist.controller';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { Role } from '@prisma/client';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
+import { authorize } from '../../shared/middleware/auth.middleware';
+import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { updateArtistSchema } from './artist.schema';
 
-const router = Router();
+export const artistRouter = Router();
 
-router.get('/', artistController.getArtists);
-router.get('/:id', artistController.getArtistById);
-router.get('/:id/songs', artistController.getArtistSongs);
-router.get('/:id/albums', artistController.getArtistAlbums);
-router.get('/:id/analytics', authenticate, authorize(Role.ARTIST, Role.ADMIN), artistController.getArtistAnalytics);
-router.patch('/me', authenticate, authorize(Role.ARTIST), artistController.updateArtistProfile);
-router.post('/:id/follow', authenticate, artistController.followArtist);
-router.delete('/:id/follow', authenticate, artistController.unfollowArtist);
-router.post('/me/request-verification', authenticate, authorize(Role.ARTIST), artistController.requestVerification);
+// Public routes (không cần đăng nhập hoặc chung)
+artistRouter.get('/', artistController.getAll);
+artistRouter.get('/:id', artistController.getProfile);
 
-export { router as artistRouter };
+// Protected routes cho ARTIST
+artistRouter.use(authMiddleware);
+artistRouter.use(authorize('ARTIST'));
+
+artistRouter.patch('/me', validateRequest(updateArtistSchema), artistController.updateProfile);
+artistRouter.get('/me/analytics', artistController.getAnalytics);
+artistRouter.get('/me/songs', artistController.getMySongs);
+artistRouter.get('/me/albums', artistController.getMyAlbums);
+// Verified Badge request
+artistRouter.post('/request-verify', artistController.requestVerification);
+
+// Social Follow
+artistRouter.post('/:id/follow', artistController.followArtist);
+artistRouter.delete('/:id/follow', artistController.unfollowArtist);

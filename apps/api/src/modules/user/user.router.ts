@@ -1,18 +1,21 @@
 import { Router } from 'express';
 import { userController } from './user.controller';
-import { authenticate } from '../../shared/middleware/auth.middleware';
+import { authMiddleware } from '../../shared/middleware/auth.middleware';
+import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { uploadImage } from '../../shared/middleware/upload.middleware';
+import { updateProfileSchema, changePasswordSchema } from './user.schema';
 
-const router = Router();
+export const userRouter = Router();
 
-router.use(authenticate); // Tất cả user routes cần auth
+// Toàn bộ User routes yêu cầu đăng nhập
+userRouter.use(authMiddleware);
 
-router.get('/me', userController.getMe);
-router.patch('/me', userController.updateMe);
-router.delete('/me', userController.deleteMe);
-router.post('/me/avatar', userController.uploadAvatar);
-router.post('/me/change-password', userController.changePassword);
-router.get('/me/liked-songs', userController.getLikedSongs);
-router.get('/me/followed-artists', userController.getFollowedArtists);
-router.get('/:id', userController.getUserById);
+userRouter.get('/profile', userController.getProfile);
+userRouter.patch('/profile', validateRequest(updateProfileSchema), userController.updateProfile);
+userRouter.patch('/password', validateRequest(changePasswordSchema), userController.changePassword);
 
-export { router as userRouter };
+// Phải cấu hình Upload middleware
+userRouter.post('/avatar', uploadImage.single('avatar'), userController.uploadAvatar);
+
+// Danh mục Social (Nhạc đã thích, đang flow ai)
+userRouter.get('/library', userController.getLibrary);

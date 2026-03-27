@@ -1,13 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { NotificationService } from './notification.service';
 import { sendSuccess } from '../../shared/utils/response';
+import { catchAsync } from '../../shared/utils/catch-async';
 
 export const notificationController = {
-  // GET /api/v1/notifications
-  getNotifications: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, [], 'OK'); },
-  // PATCH /api/v1/notifications/:id/read
-  markAsRead: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã đánh dấu đã đọc'); },
-  // PATCH /api/v1/notifications/read-all
-  markAllAsRead: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã đánh dấu tất cả đã đọc'); },
-  // DELETE /api/v1/notifications/:id
-  deleteNotification: async (_req: Request, res: Response, _next: NextFunction): Promise<void> => { sendSuccess(res, null, 'Đã xóa thông báo'); },
+  getNotifications: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await NotificationService.getNotifications(user.id, Number(req.query.page) || 1);
+    sendSuccess(res, result);
+  }),
+
+  markAsRead: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await NotificationService.markAsRead(user.id, req.params.id);
+    sendSuccess(res, result, 'Đã đánh dấu đọc');
+  }),
+
+  markAllAsRead: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await NotificationService.markAllAsRead(user.id);
+    sendSuccess(res, result);
+  }),
+
+  getUnreadCount: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await NotificationService.getUnreadCount(user.id);
+    sendSuccess(res, result);
+  }),
 };
