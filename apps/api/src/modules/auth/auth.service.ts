@@ -15,6 +15,11 @@ const BLACKLIST_PREFIX = 'blacklist:';
 const REFRESH_PREFIX = 'refresh_token:';
 
 export const AuthService = {
+  checkEmail: async (email: string) => {
+    const user = await prisma.user.findUnique({ where: { email } });
+    return { exists: !!user, isGoogleLogin: user && !user.passwordHash };
+  },
+
   // 1. Register
   register: async (data: any) => {
     const { email, password, name, dateOfBirth, gender } = data;
@@ -199,5 +204,35 @@ export const AuthService = {
 
     return { message: 'Đã kích hoạt 2FA thành công' };
   },
+
+  // 8. Forgot Password
+  forgotPassword: async (email: string) => {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new AppError('Email không tồn tại trong hệ thống', 404, ErrorCodes.NOT_FOUND);
+
+    const otp = OtpUtil.generateNumeric();
+    await redis.set(`${OTP_PREFIX}pwd_${email}`, otp, 'EX', 10 * 60);
+
+    console.log(`[DEV MODE] Quên mật khẩu OTP cho ${email}: ${otp}`);
+
+    return { message: 'Yêu cầu thành công. Vui lòng kiểm tra mã OTP.' };
+  },
+
+  // 9. Reset Password
+  resetPassword: async (data: any) => {
+    const { email, otp, newPassword } = data;
+    const cacheOtp = await redis.get(`${OTP_PREFIX}pwd_${email}`);
+    
+    if (!cacheOtp || cacheOtp !== otp) {
+      throw new AppError('Mã OTP không hợp lệ hoặc đã hết hạn', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({ where: { email }, data: { passwordHash } });
+    await redis.del(`${OTP_PREFIX}pwd_${email}`);
+
+    return { message: 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.' };
+  },
 };
+
 

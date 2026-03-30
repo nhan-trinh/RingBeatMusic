@@ -35,11 +35,13 @@ export const authController = {
   resendOtp: catchAsync(async (_req: Request, res: Response) => {
     sendSuccess(res, null, 'TODO');
   }),
-  forgotPassword: catchAsync(async (_req: Request, res: Response) => {
-    sendSuccess(res, null, 'TODO');
+  forgotPassword: catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.forgotPassword(req.body.email);
+    sendSuccess(res, result, 'Đã gửi yêu cầu quên mật khẩu');
   }),
-  resetPassword: catchAsync(async (_req: Request, res: Response) => {
-    sendSuccess(res, null, 'TODO');
+  resetPassword: catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.resetPassword(req.body);
+    sendSuccess(res, result, 'Đã đặt lại mật khẩu');
   }),
   setup2FA: catchAsync(async (req: Request, res: Response) => {
     const user = req.user!;
@@ -55,10 +57,62 @@ export const authController = {
     const result = await AuthService.verify2FA(user.id, token);
     sendSuccess(res, result, 'Xác thực 2FA thành công');
   }),
-  googleAuth: catchAsync(async (_req: Request, res: Response) => {
-    res.json({ message: 'TODO' });
+  checkEmail: catchAsync(async (req: Request, res: Response) => {
+    const result = await AuthService.checkEmail(req.body.email);
+    sendSuccess(res, result, 'Kiểm tra email thành công');
   }),
-  googleCallback: catchAsync(async (_req: Request, res: Response) => {
-    sendSuccess(res, null, 'TODO');
+  googleAuth: catchAsync(async (_req: Request, res: Response) => {
+    const { env } = require('../../shared/config/env');
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, env.GOOGLE_CALLBACK_URL);
+    const url = client.generateAuthUrl({ access_type: 'offline', scope: ['email', 'profile'] });
+    res.redirect(url);
+  }),
+  googleCallback: catchAsync(async (req: Request, res: Response) => {
+    const { code } = req.query;
+    if (!code) return res.redirect(`${process.env.FRONTEND_URL}/login?error=Google_Canceled`);
+    
+    const { env } = require('../../shared/config/env');
+    const { OAuth2Client } = require('google-auth-library');
+    const { prisma } = require('../../shared/config/database');
+    const { TokenUtil } = require('../../shared/utils/token.util');
+    const { redis } = require('../../shared/config/redis');
+
+    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, env.GOOGLE_CALLBACK_URL);
+    const { tokens } = await client.getToken(code as string);
+    client.setCredentials(tokens);
+
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.email) return res.redirect(`${env.FRONTEND_URL}/login?error=Invalid_Google_Payload`);
+
+    let user = await prisma.user.findUnique({ where: { email: payload.email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: payload.email,
+          name: payload.name || payload.email.split('@')[0],
+          avatarUrl: payload.picture,
+          isEmailVerified: true,
+          dateOfBirth: new Date('2000-01-01'),
+          gender: 'prefer-not-to-say',
+        },
+      });
+    }
+
+    const appTokens = TokenUtil.generateTokens(user.id, user.role);
+    await redis.set(`refresh_token:${user.id}`, appTokens.refreshToken, 'EX', 7 * 24 * 60 * 60);
+
+    const redirectUrl = new URL(`${env.FRONTEND_URL}/auth/callback`);
+    redirectUrl.searchParams.set('accessToken', appTokens.accessToken);
+    redirectUrl.searchParams.set('refreshToken', appTokens.refreshToken);
+    redirectUrl.searchParams.set('user', JSON.stringify({
+      id: user.id, email: user.email, name: user.name, role: user.role, avatarUrl: user.avatarUrl
+    }));
+
+    res.redirect(redirectUrl.toString());
   }),
 };

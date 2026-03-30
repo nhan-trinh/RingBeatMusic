@@ -14,8 +14,12 @@ export const authRouter = Router();
 // Public routes (không cần đăng nhập)
 authRouter.post('/register', validateRequest(registerSchema), authController.register);
 authRouter.post('/login', validateRequest(loginSchema), authController.login);
+authRouter.post('/check-email', authController.checkEmail);
 authRouter.post('/verify-email', validateRequest(verifyEmailSchema), authController.verifyEmail);
 authRouter.post('/refresh', validateRequest(refreshSchema), authController.refresh);
+
+authRouter.post('/forgot-password', authController.forgotPassword);
+authRouter.post('/reset-password', authController.resetPassword);
 
 // Oauth
 authRouter.get('/google', authController.googleAuth);

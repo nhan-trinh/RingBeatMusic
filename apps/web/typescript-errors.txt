@@ -1,0 +1,7 @@
+src/components/layout/MainLayout.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/layout/PlayerBar.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/layout/Sidebar.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/layout/Topbar.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/lib/api.ts(6,24): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/lib/api.ts(71,26): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/main.tsx(3,17): error TS5097: An import path can only end with a '.tsx' extension when 'allowImportingTsExtensions' is enabled.
