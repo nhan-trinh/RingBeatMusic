@@ -8,6 +8,8 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Icons } from '../../components/ui/icons';
+import { CheckCircle2, XCircle } from 'lucide-react';
+import { api } from '../../lib/api';
 
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*[\d#?!&@$%\^&\*]).{10,}$/;
 
@@ -27,12 +29,35 @@ export const RegisterPage = () => {
   // Lưu state tổng 3 bước
   const [formData, setFormData] = useState<any>({});
   const [serverMsg, setServerMsg] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   const formStep1 = useForm({ resolver: zodResolver(step1Schema) });
-  const formStep2 = useForm({ resolver: zodResolver(step2Schema) });
+  const formStep2 = useForm({ resolver: zodResolver(step2Schema), defaultValues: { password: '' } });
   const formStep3 = useForm({ resolver: zodResolver(step3Schema) });
 
-  const handleNext1 = (data: any) => { setFormData({ ...formData, ...data }); setStep(2); };
+  const passwordValue = formStep2.watch('password');
+  const hasLetter = /[a-zA-Z]/.test(passwordValue || '');
+  const hasNumberOrSpecials = /[\d#?!&@$%\^&\*]/.test(passwordValue || '');
+  const hasMinLength = (passwordValue || '').length >= 10;
+  const isPasswordValid = hasLetter && hasNumberOrSpecials && hasMinLength;
+
+  const handleNext1 = async (data: any) => {
+    setIsCheckingEmail(true);
+    setServerMsg(null);
+    try {
+      const res = await api.post('/auth/check-email', { email: data.email }) as any;
+      if (res.data?.exists) {
+        formStep1.setError('email', { type: 'manual', message: 'Địa chỉ email này đã được dùng để đăng ký' });
+      } else {
+        setFormData({ ...formData, ...data });
+        setStep(2);
+      }
+    } catch (error) {
+      setServerMsg({ type: 'error', text: 'Có lỗi xảy ra khi kết nối tới máy chủ.' });
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
   const handleNext2 = (data: any) => { setFormData({ ...formData, ...data }); setStep(3); };
   const handleFinalSubmit = (data: any) => {
     const finalData = { ...formData, ...data };
@@ -88,7 +113,9 @@ export const RegisterPage = () => {
                 <Link to="#" className="text-[#1ed760] font-bold text-sm underline pb-2 block"></Link>
               </div>
 
-              <Button type="submit" variant="spotify" size="lg" className="w-full mt-4 h-12 rounded-full font-bold">Next</Button>
+              <Button type="submit" variant="spotify" size="lg" disabled={isCheckingEmail} className="w-full mt-4 h-12 rounded-full font-bold">
+                {isCheckingEmail ? 'Vui lòng chờ...' : 'Next'}
+              </Button>
             </form>
 
             <div className="mx-auto w-full max-w-[324px] flex items-center gap-4 my-8">
@@ -147,16 +174,24 @@ export const RegisterPage = () => {
 
                 <div className="mt-2 text-sm text-white">
                   <p className="font-bold mb-1">Your password must contain at least</p>
-                  <ul className="text-sm space-y-1 mt-1">
-                    <li className="flex items-center gap-2"><span className="text-[#1ed760]">✓</span> 1 letter</li>
-                    <li className="flex items-center gap-2"><span className="text-[#1ed760]">✓</span> 1 number or special character</li>
-                    <li className="flex items-center gap-2"><span className="text-[#1ed760]">✓</span> 10 characters</li>
+                  <ul className="text-sm space-y-2 mt-2">
+                    <li className={`flex items-center gap-2 ${hasLetter ? 'text-[#1ed760]' : (passwordValue ? 'text-[#e22134]' : 'text-white')}`}>
+                      {hasLetter ? <CheckCircle2 className="w-5 h-5" /> : (passwordValue ? <XCircle className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-[#727272]"></div>)}
+                      <span>1 letter</span>
+                    </li>
+                    <li className={`flex items-center gap-2 ${hasNumberOrSpecials ? 'text-[#1ed760]' : (passwordValue ? 'text-[#e22134]' : 'text-white')}`}>
+                      {hasNumberOrSpecials ? <CheckCircle2 className="w-5 h-5" /> : (passwordValue ? <XCircle className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-[#727272]"></div>)}
+                      <span>1 number or special character</span>
+                    </li>
+                    <li className={`flex items-center gap-2 ${hasMinLength ? 'text-[#1ed760]' : (passwordValue ? 'text-[#e22134]' : 'text-white')}`}>
+                      {hasMinLength ? <CheckCircle2 className="w-5 h-5" /> : (passwordValue ? <XCircle className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-[#727272]"></div>)}
+                      <span>10 characters</span>
+                    </li>
                   </ul>
                 </div>
-                {formStep2.formState.errors.password && <p className="text-sm text-[#e22134] pt-2">{formStep2.formState.errors.password.message as string}</p>}
               </div>
 
-              <Button type="submit" variant="spotify" size="lg" className="w-full mt-10 h-12 rounded-full font-bold">Next</Button>
+              <Button type="submit" variant="spotify" size="lg" disabled={!isPasswordValid} className="w-full mt-10 h-12 rounded-full font-bold">Next</Button>
             </form>
           </div>
         )}
