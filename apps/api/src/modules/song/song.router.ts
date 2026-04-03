@@ -7,6 +7,7 @@ import { createSongSchema, streamSongSchema } from './song.schema';
 export const songRouter = Router();
 
 // Publicly available (but play tracking and streaming requires auth technically)
+songRouter.get('/mock-queue', songController.getMockQueue);
 songRouter.get('/', songController.getAll);
 songRouter.get('/artist/:artistId', songController.getArtistSongs);
 

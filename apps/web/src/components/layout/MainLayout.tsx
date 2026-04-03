@@ -1,7 +1,7 @@
 
 import { Sidebar } from '../layout/Sidebar';
 import { Topbar } from '../layout/Topbar';
-import { PlayerBar } from '../layout/PlayerBar';
+import { PlayerBar } from '../player/PlayerBar';
 import { Outlet } from 'react-router-dom';
 
 export const MainLayout = () => {

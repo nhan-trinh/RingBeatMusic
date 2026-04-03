@@ -50,4 +50,50 @@ export const songController = {
     const result = await SongService.unlikeSong(user.id, req.params.id);
     sendSuccess(res, result, 'Bỏ thích');
   }),
+  
+  getMockQueue: catchAsync(async (_req: Request, res: Response) => {
+    const mockSongs = [
+      {
+        id: 'mock-1',
+        title: 'Bản Nhạc Test 1',
+        artistName: 'SoundHelix',
+        coverUrl: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200&h=200',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        duration: 372,
+      },
+      {
+        id: 'mock-2',
+        title: 'Bản Nhạc Test 2',
+        artistName: 'SoundHelix',
+        coverUrl: 'https://images.unsplash.com/photo-1493225457124-a1a2a5f5f9af?auto=format&fit=crop&q=80&w=200&h=200',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        duration: 425,
+      },
+      {
+        id: 'mock-3',
+        title: 'Bản Nhạc Test 3',
+        artistName: 'SoundHelix',
+        coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=200&h=200',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        duration: 344,
+      },
+      {
+        id: 'mock-4',
+        title: 'Bản Nhạc Test 4',
+        artistName: 'SoundHelix',
+        coverUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80&w=200&h=200',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+        duration: 302,
+      },
+      {
+        id: 'mock-5',
+        title: 'Bản Nhạc Test 5',
+        artistName: 'SoundHelix',
+        coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&q=80&w=200&h=200',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+        duration: 353,
+      }
+    ];
+    sendSuccess(res, mockSongs, 'Lấy mock queue thành công');
+  }),
 };
