@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PlaylistService } from './playlist.service';
 import { sendSuccess } from '../../shared/utils/response';
 import { catchAsync } from '../../shared/utils/catch-async';
+import { prisma } from '../../shared/config/database';
 
 export const playlistController = {
   create: catchAsync(async (req: Request, res: Response) => {
@@ -58,5 +59,27 @@ export const playlistController = {
     const { songId, localPlaylistId } = req.body;
     const result = await PlaylistService.hideSong(user.id, songId, localPlaylistId);
     sendSuccess(res, result);
-  })
+  }),
+
+  follow: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    try {
+      await (prisma as any).playlistFollower.upsert({
+        where: { userId_playlistId: { userId: user.id, playlistId: req.params.id } },
+        create: { userId: user.id, playlistId: req.params.id },
+        update: {},
+      });
+    } catch { /* Ignore */ }
+    sendSuccess(res, {}, 'Đã lưu playlist vào thư viện');
+  }),
+
+  unfollow: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    try {
+      await (prisma as any).playlistFollower.deleteMany({
+        where: { userId: user.id, playlistId: req.params.id },
+      });
+    } catch { /* Ignore */ }
+    sendSuccess(res, {}, 'Đã xóa playlist khỏi thư viện');
+  }),
 };

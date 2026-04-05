@@ -5,25 +5,33 @@ import { toast } from 'sonner';
 
 const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: () => void, onSuccess: () => void }) => {
   const [form, setForm] = useState({
-    title: '', audioUrl: '', coverUrl: '', lyrics: '',
-    duration: '', albumId: '', language: 'vi',
+    title: '', lyrics: '', duration: '', albumId: '', language: 'vi',
   });
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.audioUrl) {
-      toast.error('Vui lòng điền tiêu đề và URL âm thanh');
+    if (!form.title || !audioFile) {
+      toast.error('Vui lòng điền tiêu đề và chọn file âm thanh');
       return;
     }
     setSubmitting(true);
     try {
-      await api.post('/songs/with-url', {
-        ...form,
-        duration: form.duration ? parseInt(form.duration) : 0,
-        albumId: form.albumId || null,
+      const formData = new FormData();
+      formData.append('title', form.title);
+      formData.append('audio', audioFile);
+      if (coverFile) formData.append('cover', coverFile);
+      if (form.lyrics) formData.append('lyrics', form.lyrics);
+      if (form.duration) formData.append('duration', form.duration);
+      if (form.albumId) formData.append('albumId', form.albumId);
+      if (form.language) formData.append('language', form.language);
+
+      await api.post('/songs/upload-file', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      toast.success('Bài hát đã được thêm vào thư viện! 🎵');
+      toast.success('Bài hát đã được tải lên thư viện! 🎵');
       onSuccess();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Có lỗi xảy ra');
@@ -47,21 +55,21 @@ const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: (
             />
           </div>
           <div>
-            <label className="text-xs text-[#b3b3b3] mb-1 block">URL âm thanh (MP3) *</label>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">File âm thanh (MP3) *</label>
             <input
+              type="file"
+              accept="audio/*"
               className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
-              placeholder="https://example.com/song.mp3"
-              value={form.audioUrl}
-              onChange={e => setForm(p => ({ ...p, audioUrl: e.target.value }))}
+              onChange={e => setAudioFile(e.target.files?.[0] || null)}
             />
           </div>
           <div>
-            <label className="text-xs text-[#b3b3b3] mb-1 block">URL ảnh cover</label>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Ảnh cover (tuỳ chọn)</label>
             <input
+              type="file"
+              accept="image/*"
               className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
-              placeholder="https://example.com/cover.jpg"
-              value={form.coverUrl}
-              onChange={e => setForm(p => ({ ...p, coverUrl: e.target.value }))}
+              onChange={e => setCoverFile(e.target.files?.[0] || null)}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -70,7 +78,7 @@ const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: (
               <input
                 type="number" min="0"
                 className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
-                placeholder="240"
+                placeholder="Ví dụ: 240"
                 value={form.duration}
                 onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
               />
@@ -108,7 +116,105 @@ const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: (
               type="submit" disabled={submitting}
               className="flex-1 py-2 rounded-full bg-[#1DB954] text-black text-sm font-bold hover:bg-[#1ed760] disabled:opacity-50 transition-colors"
             >
-              {submitting ? 'Đang gửi...' : 'Gửi duyệt'}
+              {submitting ? 'Đang gửi...' : 'Tải lên & Lưu'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EditModal = ({ song, albums, onClose, onSuccess }: { song: any, albums: any[], onClose: () => void, onSuccess: () => void }) => {
+  const [form, setForm] = useState({
+    title: song.title || '', lyrics: song.lyrics || '', albumId: song.albumId || '',
+  });
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title) {
+      toast.error('Vui lòng điền tiêu đề');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', form.title);
+      if (coverFile) formData.append('cover', coverFile);
+      if (form.lyrics !== song.lyrics) formData.append('lyrics', form.lyrics);
+      formData.append('albumId', form.albumId || '');
+
+      await api.patch(`/songs/${song.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Đã cập nhật bài hát');
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[#282828] rounded-2xl w-full max-w-lg p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <h3 className="text-xl font-bold mb-5">Sửa thông tin bài hát</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Tiêu đề *</label>
+            <input
+              className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
+              value={form.title}
+              onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Thay đổi Ảnh cover</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
+              onChange={e => setCoverFile(e.target.files?.[0] || null)}
+            />
+            {song.coverUrl && !coverFile && (
+              <p className="text-xs text-[#b3b3b3] mt-1">Đang dùng ảnh hiện tại.</p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Album</label>
+            <select
+              className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
+              value={form.albumId}
+              onChange={e => setForm(p => ({ ...p, albumId: e.target.value }))}
+            >
+              <option value="">— Không có album —</option>
+              {albums.map((a: any) => <option key={a.id} value={a.id}>{a.title}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Lời bài hát</label>
+            <textarea
+              rows={3}
+              className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954] resize-none"
+              value={form.lyrics}
+              onChange={e => setForm(p => ({ ...p, lyrics: e.target.value }))}
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button" onClick={onClose}
+              className="flex-1 py-2 rounded-full border border-[#535353] text-sm font-bold hover:border-white transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit" disabled={submitting}
+              className="flex-1 py-2 rounded-full bg-[#1DB954] text-black text-sm font-bold hover:bg-[#1ed760] disabled:opacity-50 transition-colors"
+            >
+              {submitting ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>
         </form>
@@ -122,6 +228,18 @@ export const ArtistSongsPage = () => {
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingSong, setEditingSong] = useState<any>(null);
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xoá bài hát "${title}"? Thao tác này không thể hoàn tác.`)) return;
+    try {
+      await api.delete(`/songs/${id}`);
+      toast.success('Đã xoá bài hát');
+      fetchData();
+    } catch (err: any) {
+      toast.error('Có lỗi khi xoá bài hát');
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -210,10 +328,18 @@ export const ArtistSongsPage = () => {
                 </span>
                 {statusBadge(song.status)}
                 <div className="flex items-center gap-1">
-                  <button className="p-1.5 rounded-md hover:bg-white/10 text-[#b3b3b3] hover:text-white transition-colors">
+                  <button 
+                    onClick={() => setEditingSong(song)}
+                    className="p-1.5 rounded-md hover:bg-white/10 text-[#b3b3b3] hover:text-white transition-colors"
+                    title="Chỉnh sửa"
+                  >
                     <Edit2 size={14} />
                   </button>
-                  <button className="p-1.5 rounded-md hover:bg-red-500/10 text-[#b3b3b3] hover:text-red-400 transition-colors">
+                  <button 
+                    onClick={() => handleDelete(song.id, song.title)}
+                    className="p-1.5 rounded-md hover:bg-red-500/10 text-[#b3b3b3] hover:text-red-400 transition-colors"
+                    title="Xoá bài hát"
+                  >
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -228,6 +354,14 @@ export const ArtistSongsPage = () => {
           albums={albums}
           onClose={() => setShowModal(false)}
           onSuccess={() => { setShowModal(false); fetchData(); }}
+        />
+      )}
+      {editingSong && (
+        <EditModal
+          song={editingSong}
+          albums={albums}
+          onClose={() => setEditingSong(null)}
+          onSuccess={() => { setEditingSong(null); fetchData(); }}
         />
       )}
     </div>

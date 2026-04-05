@@ -44,7 +44,8 @@ export const AlbumPage = () => {
   const [loading, setLoading] = useState(true);
 
   const { setQueueAndPlay, currentContextId, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { isLiked, toggleLike } = useLibraryStore();
+  const { isLiked, toggleLike, isFollowingAlbum, toggleFollowAlbum } = useLibraryStore();
+  const albumFollowed = id ? isFollowingAlbum(id) : false;
 
   useEffect(() => {
     const fetchAlbum = async () => {
@@ -164,8 +165,12 @@ export const AlbumPage = () => {
         >
           {isThisPlaying ? <Pause size={28} className="fill-current" /> : <Play size={28} className="fill-current ml-1" />}
         </button>
-        <button className="text-[#b3b3b3] hover:text-white transition-colors">
-          <Heart size={32} />
+        <button
+          onClick={() => id && toggleFollowAlbum(id, album.title)}
+          className={`transition-colors ${albumFollowed ? 'text-[#1db954]' : 'text-[#b3b3b3] hover:text-white'}`}
+          title={albumFollowed ? 'Xóa khỏi thư viện' : 'Lưu vào thư viện'}
+        >
+          <Heart size={32} className={albumFollowed ? 'fill-[#1db954]' : ''} />
         </button>
         <button className="text-[#b3b3b3] hover:text-white transition-colors">
           <MoreHorizontal size={32} />

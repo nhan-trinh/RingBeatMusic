@@ -27,6 +27,13 @@ export const albumController = {
     sendSuccess(res, result, 'Xóa album thành công');
   }),
 
+  uploadCover: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    if (!req.file) { res.status(400).json({ message: 'Không có file ảnh' }); return; }
+    const result = await AlbumService.uploadCover(user.id, req.params.id, req.file);
+    sendSuccess(res, result, 'Cập nhật ảnh bìa album thành công');
+  }),
+
   reorderSongs: catchAsync(async (req: Request, res: Response) => {
     const user = req.user!;
     const result = await AlbumService.reorderSongs(req.params.id, user.id, req.body.songs);

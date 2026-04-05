@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { playlistController } from './playlist.controller';
-import { authMiddleware } from '../../shared/middleware/auth.middleware';
+import { authMiddleware, optionalAuthMiddleware } from '../../shared/middleware/auth.middleware';
 import { validateRequest } from '../../shared/middleware/validate.middleware';
 import { 
   createPlaylistSchema, 
@@ -11,10 +11,8 @@ import {
 
 export const playlistRouter = Router();
 
-// Lấy chi tiết playlist có thể ko cần auth (hoặc auth thụ động) để lấy public
-// Ta dùng middleware tuỳ biến cho việc cho phép passthrough nếu token lỗi hoặc ko có
-// tạm thời định tuyến bảo vệ hoàn toàn 
-playlistRouter.get('/:id', playlistController.getDetails);
+// GET /:id dùng optionalAuth – public playlist trợ được, private chỉ được nếu owner
+playlistRouter.get('/:id', optionalAuthMiddleware, playlistController.getDetails);
 
 // Protected (Yêu cầu đăng nhập)
 playlistRouter.use(authMiddleware);
@@ -30,3 +28,7 @@ playlistRouter.delete('/:id', playlistController.delete);
 playlistRouter.post('/:id/songs', validateRequest(addSongSchema), playlistController.addSong);
 playlistRouter.delete('/:id/songs/:songId', playlistController.removeSong);
 playlistRouter.patch('/:id/songs/reorder', validateRequest(reorderSongsSchema), playlistController.reorderSongs);
+
+// Follow / Unfollow playlist
+playlistRouter.post('/:id/follow', playlistController.follow);
+playlistRouter.delete('/:id/follow', playlistController.unfollow);

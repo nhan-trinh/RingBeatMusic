@@ -10,10 +10,25 @@ export const artistController = {
     sendSuccess(res, result, 'Lấy thông tin Artist thành công');
   }),
 
+  getMyProfile: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await ArtistService.getMyProfile(user.id);
+    sendSuccess(res, result, 'Lấy thông tin của bạn thành công');
+  }),
+
   setupProfile: catchAsync(async (req: Request, res: Response) => {
     const user = req.user!;
     const result = await ArtistService.setupProfile(user.id, req.body);
     sendSuccess(res, result, 'Tạo profile nghệ sĩ thành công', 201);
+  }),
+
+  uploadAvatar: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    if (!req.file) {
+      res.status(400).json({ message: 'Không có file ảnh' }); return;
+    }
+    const result = await ArtistService.uploadAvatar(user.id, req.file);
+    sendSuccess(res, result, 'Cập nhật ảnh đại diện thành công');
   }),
 
   updateProfile: catchAsync(async (req: Request, res: Response) => {

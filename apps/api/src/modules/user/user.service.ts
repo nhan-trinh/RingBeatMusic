@@ -116,6 +116,15 @@ export const UserService = {
       take: 30
     });
 
+    const followedPlaylists = await (prisma as any).playlistFollower.findMany({
+      where: { userId },
+      include: {
+        playlist: { select: { id: true, title: true, coverUrl: true } }
+      },
+      orderBy: { followedAt: 'desc' },
+      take: 30
+    });
+
     return {
       likedSongs: likedSongs.map(ls => ({
         id: ls.song.id,
@@ -127,11 +136,14 @@ export const UserService = {
         audioUrl: ls.song.audioUrl320 || ls.song.audioUrl128 || '',
         likedAt: ls.likedAt,
       })),
-      followedArtists: followedArtists.map(fa => fa.artist),
-      followedAlbums: followedAlbums.map(fa => fa.album),
+      followedArtists: followedArtists.map((fa: any) => fa.artist),
+      followedAlbums: followedAlbums.map((fa: any) => fa.album),
+      followedPlaylists: followedPlaylists.map((fp: any) => fp.playlist),
       // Thống kê nhanh
-      likedSongIds: likedSongs.map(ls => ls.songId),
-      followedArtistIds: followedArtists.map(fa => fa.artistId),
+      likedSongIds: likedSongs.map((ls: any) => ls.songId),
+      followedArtistIds: followedArtists.map((fa: any) => fa.artistId),
+      followedAlbumIds: followedAlbums.map((fa: any) => fa.album.id),
+      followedPlaylistIds: followedPlaylists.map((fp: any) => fp.playlistId),
     };
   },
 };

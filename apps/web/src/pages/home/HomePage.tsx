@@ -7,6 +7,8 @@ import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
 import { Play, Pause, Heart } from 'lucide-react';
 import { formatTime } from '../../lib/utils';
+import { Link } from 'react-router-dom';
+import { SongContextMenu, useContextMenu } from '../../components/shared/SongContextMenu';
 
 export const HomePage = () => {
   const [feedData, setFeedData] = useState<any>(null);
@@ -121,6 +123,13 @@ export const HomePage = () => {
             <SongRow songs={feedData.topSongs} contextId="top-songs" />
           </Section>
         )}
+
+        {/* ✅ New Albums */}
+        {feedData.newAlbums?.length > 0 && (
+          <Section title="Album mới phát hành">
+            <AlbumGrid albums={feedData.newAlbums} />
+          </Section>
+        )}
       </div>
     </div>
   );
@@ -147,48 +156,98 @@ const CardGrid = ({ items }: { items: any[] }) => (
 const SongRow = ({ songs, contextId }: { songs: any[], contextId: string }) => {
   const { setQueueAndPlay, currentTrack, currentContextId, isPlaying, togglePlay } = usePlayerStore();
   const { isLiked, toggleLike } = useLibraryStore();
+  const { menu, openMenu, closeMenu } = useContextMenu();
 
   return (
-    <div className="flex flex-col gap-1">
-      {songs.map((song: any, index: number) => {
-        const isRowPlaying = currentContextId === contextId && currentTrack?.id === song.id;
-        const handlePlay = () => {
-          if (isRowPlaying) { togglePlay(); }
-          else { setQueueAndPlay(songs, index, contextId); }
-        };
-        return (
-          <div
-            key={song.id}
-            onDoubleClick={handlePlay}
-            className="group flex items-center gap-4 px-3 py-2 rounded-md hover:bg-white/10 cursor-pointer text-[#b3b3b3]"
-          >
-            <div className="w-10 h-10 relative flex-shrink-0">
-              <img src={song.coverUrl || '/placeholder.jpg'} alt={song.title} className="w-10 h-10 rounded object-cover" />
-              <button
-                onClick={(e) => { e.stopPropagation(); handlePlay(); }}
-                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded transition-opacity"
-              >
-                {isRowPlaying && isPlaying ? <Pause size={14} className="fill-white text-white" /> : <Play size={14} className="fill-white text-white ml-0.5" />}
-              </button>
+    <>
+      <div className="flex flex-col gap-1">
+        {songs.map((song: any, index: number) => {
+          const isRowPlaying = currentContextId === contextId && currentTrack?.id === song.id;
+          const handlePlay = () => {
+            if (isRowPlaying) { togglePlay(); }
+            else { setQueueAndPlay(songs, index, contextId); }
+          };
+          return (
+            <div
+              key={song.id}
+              onDoubleClick={handlePlay}
+              onContextMenu={(e) => openMenu(e, song)}
+              className="group flex items-center gap-4 px-3 py-2 rounded-md hover:bg-white/10 cursor-pointer text-[#b3b3b3]"
+            >
+              <div className="w-10 h-10 relative flex-shrink-0">
+                <img src={song.coverUrl || '/placeholder.jpg'} alt={song.title} className="w-10 h-10 rounded object-cover" />
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePlay(); }}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded transition-opacity"
+                >
+                  {isRowPlaying && isPlaying ? <Pause size={14} className="fill-white text-white" /> : <Play size={14} className="fill-white text-white ml-0.5" />}
+                </button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${isRowPlaying ? 'text-[#1DB954]' : 'text-white'}`}>{song.title}</p>
+                <p className="text-xs truncate">{song.artistName}</p>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleLike(song.id, song.title); }}
+                  className={`transition-opacity ${
+                    isLiked(song.id) ? 'text-[#1DB954] opacity-100' : 'opacity-0 group-hover:opacity-100 hover:text-white'
+                  }`}
+                >
+                  <Heart size={14} className={isLiked(song.id) ? 'fill-[#1DB954]' : ''} />
+                </button>
+                <span className="text-xs">{formatTime(song.duration)}</span>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${isRowPlaying ? 'text-[#1DB954]' : 'text-white'}`}>{song.title}</p>
-              <p className="text-xs truncate">{song.artistName}</p>
-            </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <button
-                onClick={(e) => { e.stopPropagation(); toggleLike(song.id, song.title); }}
-                className={`opacity-0 group-hover:opacity-100 transition-opacity ${
-                  isLiked(song.id) ? 'text-[#1DB954]' : 'hover:text-white'
-                }`}
-              >
-                <Heart size={14} className={isLiked(song.id) ? 'fill-[#1DB954]' : ''} />
-              </button>
-              <span className="text-xs">{formatTime(song.duration)}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {menu && (
+        <SongContextMenu
+          song={menu.song}
+          position={menu.position}
+          onClose={closeMenu}
+          onPlay={() => {
+            const idx = songs.findIndex(s => s.id === menu.song.id);
+            if (idx !== -1) setQueueAndPlay(songs, idx, contextId);
+          }}
+        />
+      )}
+    </>
   );
 };
+
+const AlbumGrid = ({ albums }: { albums: any[] }) => (
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
+    {albums.map((album) => (
+      <Link
+        key={album.id}
+        to={`/album/${album.id}`}
+        className="group bg-[#181818] hover:bg-[#282828] p-4 rounded-xl transition-colors cursor-pointer"
+      >
+        <div className="relative mb-4">
+          {album.coverUrl ? (
+            <img
+              src={album.coverUrl}
+              alt={album.title}
+              className="w-full aspect-square object-cover rounded-md shadow-lg"
+            />
+          ) : (
+            <div className="w-full aspect-square bg-[#282828] group-hover:bg-[#3e3e3e] rounded-md flex items-center justify-center transition-colors">
+              <span className="text-4xl">💿</span>
+            </div>
+          )}
+          <button className="absolute bottom-2 right-2 w-10 h-10 bg-[#1DB954] text-black rounded-full flex items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+            <Play size={18} className="fill-current ml-0.5" />
+          </button>
+        </div>
+        <p className="font-bold text-white truncate text-sm">{album.title}</p>
+        <p className="text-xs text-[#b3b3b3] mt-1 truncate">
+          {album.artistName} • {album.songCount} bài
+        </p>
+      </Link>
+    ))}
+  </div>
+);
+

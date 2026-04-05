@@ -25,10 +25,10 @@ enum Role {
 }
 
 enum SongStatus {
-  PENDING   // Chờ moderator duyệt
-  APPROVED  // Đã duyệt, public
-  REJECTED  // Bị từ chối
-  ARCHIVED  // Đã ẩn
+  PENDING // Chờ moderator duyệt
+  APPROVED // Đã duyệt, public
+  REJECTED // Bị từ chối
+  ARCHIVED // Đã ẩn
 }
 
 enum AlbumStatus {
@@ -90,10 +90,10 @@ enum AuditAction {
 model User {
   id               String    @id @default(uuid())
   email            String    @unique
-  passwordHash     String?   // null nếu đăng nhập Google
+  passwordHash     String? // null nếu đăng nhập Google
   name             String
   dateOfBirth      DateTime
-  gender           String?   // man | woman | non-binary | prefer_not_to_say
+  gender           String? // man | woman | non-binary | prefer_not_to_say
   avatarUrl        String?
   role             Role      @default(USER_FREE)
   isEmailVerified  Boolean   @default(false)
@@ -115,6 +115,7 @@ model User {
   likedSongs         LikedSong[]
   followedArtists    FollowedArtist[]
   followedAlbums     FollowedAlbum[]
+  followedPlaylists  PlaylistFollower[]
   hiddenSongs        HiddenSong[]
   reports            Report[]         @relation("ReportedBy")
   strikes            Strike[]
@@ -130,7 +131,7 @@ model Artist {
   bio         String?
   avatarUrl   String?
   isVerified  Boolean  @default(false)
-  socialLinks Json?    // { instagram, facebook, youtube, ... }
+  socialLinks Json? // { instagram, facebook, youtube, ... }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -165,12 +166,12 @@ model Song {
   album        Album?     @relation(fields: [albumId], references: [id])
   genreId      String?
   genre        Genre?     @relation(fields: [genreId], references: [id])
-  duration     Int        // giây
-  audioUrl128  String?    // Supabase — 128kbps (Free)
-  audioUrl320  String?    // Supabase — 320kbps (Premium)
+  duration     Int // giây
+  audioUrl128  String? // Supabase — 128kbps (Free)
+  audioUrl320  String? // Supabase — 320kbps (Premium)
   coverUrl     String?
   lyrics       String?
-  syncedLyrics Json?      // [{ time: 12.5, text: "..." }]
+  syncedLyrics Json? // [{ time: 12.5, text: "..." }]
   language     String?
   releaseDate  DateTime?
   status       SongStatus @default(PENDING)
@@ -228,11 +229,11 @@ model Playlist {
   title           String
   description     String?
   coverUrl        String?
-  ownerId         String?  // null = playlist hệ thống (Admin tạo)
+  ownerId         String? // null = playlist hệ thống (Admin tạo)
   owner           User?    @relation(fields: [ownerId], references: [id])
   isPublic        Boolean  @default(false)
-  isSystem        Boolean  @default(false)   // Top 100, Trending
-  isFeatured      Boolean  @default(false)   // Ghim trang chủ
+  isSystem        Boolean  @default(false) // Top 100, Trending
+  isFeatured      Boolean  @default(false) // Ghim trang chủ
   isPinned        Boolean  @default(false)
   isCollaborative Boolean  @default(false)
   createdAt       DateTime @default(now())
@@ -240,6 +241,7 @@ model Playlist {
 
   songs         PlaylistSong[]
   collaborators PlaylistCollaborator[]
+  followedBy    PlaylistFollower[]
 }
 
 model PlaylistSong {
@@ -284,7 +286,7 @@ model HiddenSong {
   user       User     @relation(fields: [userId], references: [id])
   songId     String
   song       Song     @relation(fields: [songId], references: [id])
-  playlistId String?  // null = ẩn toàn cục
+  playlistId String? // null = ẩn toàn cục
   hiddenAt   DateTime @default(now())
 }
 
@@ -328,17 +330,17 @@ model Subscription {
 }
 
 model Payment {
-  id                 String           @id @default(uuid())
-  userId             String
-  user               User             @relation(fields: [userId], references: [id])
-  plan               SubscriptionPlan
-  amount             Int              // VND
-  status             PaymentStatus    @default(PENDING)
-  vnpayTxnRef        String?          @unique
-  vnpayResponseCode  String?
-  idempotencyKey     String           @unique
-  paidAt             DateTime?
-  createdAt          DateTime         @default(now())
+  id                String           @id @default(uuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id])
+  plan              SubscriptionPlan
+  amount            Int // VND
+  status            PaymentStatus    @default(PENDING)
+  vnpayTxnRef       String?          @unique
+  vnpayResponseCode String?
+  idempotencyKey    String           @unique
+  paidAt            DateTime?
+  createdAt         DateTime         @default(now())
 
   invoice Invoice?
 }
@@ -366,28 +368,28 @@ model Report {
   song       Song?        @relation(fields: [songId], references: [id])
   reason     String
   status     ReportStatus @default(PENDING)
-  resolvedBy String?      // Moderator userId
+  resolvedBy String? // Moderator userId
   resolvedAt DateTime?
   note       String?
   createdAt  DateTime     @default(now())
 }
 
 model Strike {
-  id        String      @id @default(uuid())
+  id        String       @id @default(uuid())
   userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  issuedBy  String      // Moderator userId
+  user      User         @relation(fields: [userId], references: [id])
+  issuedBy  String // Moderator userId
   reason    StrikeReason
   note      String?
-  createdAt DateTime    @default(now())
+  createdAt DateTime     @default(now())
 }
 
 model AuditLog {
   id         String      @id @default(uuid())
-  actorId    String      // Admin hoặc Moderator userId
+  actorId    String // Admin hoặc Moderator userId
   action     AuditAction
-  targetId   String?     // userId / songId / reportId bị tác động
-  targetType String?     // "user" | "song" | "report"
+  targetId   String? // userId / songId / reportId bị tác động
+  targetType String? // "user" | "song" | "report"
   metadata   Json?
   createdAt  DateTime    @default(now())
 }
@@ -397,14 +399,14 @@ model AuditLog {
 // =============================================
 
 model PodcastShow {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   hostId      String
   host        PodcastHost @relation(fields: [hostId], references: [id])
   title       String
   description String?
   coverUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   episodes    PodcastEpisode[]
   subscribers PodcastSubscriber[]
@@ -432,4 +434,18 @@ model PodcastSubscriber {
   subscribedAt DateTime    @default(now())
 
   @@unique([showId, userId])
+}
+
+// =============================================
+// Playlist Follows
+// =============================================
+
+model PlaylistFollower {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  followedAt DateTime @default(now())
+
+  @@id([userId, playlistId])
 }

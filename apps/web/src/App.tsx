@@ -18,6 +18,8 @@ import { AlbumPage } from './pages/album/AlbumPage';
 import { ArtistDashboardLayout } from './pages/artist-dashboard/ArtistDashboardLayout';
 import { ArtistAnalyticsPage } from './pages/artist-dashboard/ArtistAnalyticsPage';
 import { ArtistSongsPage } from './pages/artist-dashboard/ArtistSongsPage';
+import { ArtistAlbumsPage } from './pages/artist-dashboard/ArtistAlbumsPage';
+import { ArtistSettingsPage } from './pages/artist-dashboard/ArtistSettingsPage';
 import { useLibraryStore } from './stores/library.store';
 import { useAuthStore } from './stores/auth.store';
 import { useEffect } from 'react';
@@ -78,8 +80,8 @@ function App() {
         <Route path="/artist-dashboard" element={<ProtectedRoute><ArtistDashboardLayout /></ProtectedRoute>}>
           <Route index element={<ArtistAnalyticsPage />} />
           <Route path="songs" element={<ArtistSongsPage />} />
-          <Route path="albums" element={<PlaceholderPage name="Quản lý Album" color="#a67124" />} />
-          <Route path="settings" element={<PlaceholderPage name="Cài đặt" color="#522bb3" />} />
+          <Route path="albums" element={<ArtistAlbumsPage />} />
+          <Route path="settings" element={<ArtistSettingsPage />} />
         </Route>
         <Route path="/admin" element={<FullScreenPlaceholder name="Admin Dashboard" />} />
 

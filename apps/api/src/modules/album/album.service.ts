@@ -1,5 +1,6 @@
 import { prisma } from '../../shared/config/database';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
+import { SupabaseUtil } from '../../shared/utils/supabase.util';
 
 export const AlbumService = {
   createAlbum: async (userId: string, data: any) => {
@@ -9,10 +10,11 @@ export const AlbumService = {
     return await prisma.album.create({
       data: {
         title: data.title,
-        coverUrl: data.coverUrl,
+        coverUrl: data.coverUrl || null,
         releaseDate: data.releaseDate ? new Date(data.releaseDate) : null,
         artistId: artist.id,
-        status: 'DRAFT',
+        // TODO Phase 7: đổi lại DRAFT khi Moderator Panel hoàn thành
+        status: 'PUBLISHED',
       },
     });
   },
@@ -73,6 +75,23 @@ export const AlbumService = {
 
     await prisma.album.delete({ where: { id: albumId } });
     return { message: 'Đã xóa album thành công' };
+  },
+
+  uploadCover: async (userId: string, albumId: string, file: Express.Multer.File) => {
+    const artist = await prisma.artist.findUnique({ where: { userId } });
+    if (!artist) throw new AppError('Không phải nghệ sĩ', 403, ErrorCodes.FORBIDDEN);
+
+    const album = await prisma.album.findUnique({ where: { id: albumId } });
+    if (!album || album.artistId !== artist.id) {
+      throw new AppError('Album không hợp lệ', 403, ErrorCodes.FORBIDDEN);
+    }
+
+    const ext = file.mimetype.split('/')[1] || 'jpg';
+    const filePath = `album-covers/${albumId}.${ext}`;
+    const coverUrl = await SupabaseUtil.uploadBuffer('images', filePath, file.buffer, file.mimetype);
+
+    await prisma.album.update({ where: { id: albumId }, data: { coverUrl } });
+    return { coverUrl };
   },
 
   addSongToAlbum: async (userId: string, albumId: string, songId: string) => {

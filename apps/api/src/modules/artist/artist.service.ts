@@ -1,5 +1,6 @@
 import { prisma } from '../../shared/config/database';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
+import { SupabaseUtil } from '../../shared/utils/supabase.util';
 
 export const ArtistService = {
   getProfile: async (id: string) => {
@@ -59,6 +60,35 @@ export const ArtistService = {
     return { ...artist, alreadyExists: false };
   },
 
+  getMyProfile: async (userId: string) => {
+    const artist = await prisma.artist.findUnique({
+      where: { userId },
+      select: {
+        id: true, stageName: true, bio: true, avatarUrl: true,
+        isVerified: true, socialLinks: true, userId: true,
+        _count: { select: { songs: true, followedBy: true } },
+      },
+    });
+    if (!artist) throw new AppError('Chưa có Artist Profile', 404, ErrorCodes.NOT_FOUND);
+    return artist;
+  },
+
+  uploadAvatar: async (userId: string, file: Express.Multer.File) => {
+    const artist = await prisma.artist.findUnique({ where: { userId } });
+    if (!artist) throw new AppError('Không tìm thấy artist', 404, ErrorCodes.NOT_FOUND);
+
+    const ext = file.mimetype.split('/')[1] || 'jpg';
+    const filePath = `avatars/${artist.id}.${ext}`;
+    const avatarUrl = await SupabaseUtil.uploadBuffer('images', filePath, file.buffer, file.mimetype);
+
+    await prisma.artist.update({
+      where: { id: artist.id },
+      data: { avatarUrl },
+    });
+
+    return { avatarUrl };
+  },
+
   updateProfile: async (userId: string, data: any) => {
     const artist = await prisma.artist.findUnique({ where: { userId } });
     if (!artist) {
@@ -83,11 +113,14 @@ export const ArtistService = {
       where: { artistId: artist.id },
       _sum: { playCount: true },
     });
+    const followers = await prisma.followedArtist.count({
+      where: { artistId: artist.id },
+    });
 
     return {
       totalBaseSongs: totalSongs,
       totalPlays: plays._sum.playCount || 0,
-      totalFollowers: 0,
+      totalFollowers: followers,
       playsByDay: [{ date: new Date().toISOString().split('T')[0], plays: plays._sum.playCount || 0 }],
       topSongs: [], 
     };
@@ -137,7 +170,15 @@ export const ArtistService = {
 
     return await prisma.album.findMany({
       where: { artistId: artist.id },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { songs: true } },
+        songs: {
+          take: 1,
+          select: { coverUrl: true },
+          where: { coverUrl: { not: null } },
+        },
+      },
     });
   },
   

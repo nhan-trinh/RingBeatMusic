@@ -15,7 +15,8 @@ export const PlaylistPage = () => {
   const [loading, setLoading] = useState(true);
 
   const { setQueueAndPlay, currentContextId, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { isLiked, toggleLike } = useLibraryStore();
+  const { isLiked, toggleLike, isFollowingPlaylist, toggleFollowPlaylist } = useLibraryStore();
+  const playlistFollowed = id ? isFollowingPlaylist(id) : false;
 
   useEffect(() => {
     const fetchPlaylist = async () => {
@@ -155,11 +156,13 @@ export const PlaylistPage = () => {
           {isThisPlaying ? <Pause size={28} className="fill-current" /> : <Play size={28} className="fill-current ml-1" />}
         </button>
         <button
+          onClick={() => id && toggleFollowPlaylist(id, playlist.title)}
           className={`transition-colors ${
-            false ? 'text-[#1db954]' : 'text-[#b3b3b3] hover:text-white'
+            playlistFollowed ? 'text-[#1db954]' : 'text-[#b3b3b3] hover:text-white'
           }`}
+          title={playlistFollowed ? 'Xóa khỏi thư viện' : 'Lưu vào thư viện'}
         >
-          <Heart size={32} />
+          <Heart size={32} className={playlistFollowed ? 'fill-[#1db954]' : ''} />
         </button>
         <button className="text-[#b3b3b3] hover:text-white transition-colors">
           <MoreHorizontal size={32} />

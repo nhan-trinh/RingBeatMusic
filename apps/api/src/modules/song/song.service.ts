@@ -72,6 +72,96 @@ export const SongService = {
     return { message: 'Đã ghi nhận tệp âm thanh, bài hát đang chờ được xử lý và kiểm duyệt' };
   },
 
+  // 2.5: Upload trực tiếp file mp3 qua backend (thay vì FE upload s3 trực tiếp để cho dễ debug Phase 6)
+  uploadSongFiles: async (userId: string, data: any, files: { [fieldname: string]: Express.Multer.File[] }) => {
+    const artist = await prisma.artist.findUnique({ where: { userId } });
+    if (!artist) throw new AppError('Chỉ nghệ sĩ mới được đăng bài', 403, ErrorCodes.FORBIDDEN);
+
+    let coverUrl = null;
+    if (files.cover?.[0]) {
+      const ext = files.cover[0].mimetype.split('/')[1] || 'jpg';
+      const cPath = `covers/${artist.id}/${Date.now()}.${ext}`;
+      coverUrl = await SupabaseUtil.uploadBuffer('images', cPath, files.cover[0].buffer, files.cover[0].mimetype);
+    } // fallback
+    if (!coverUrl && data.coverUrl) { coverUrl = data.coverUrl; }
+
+    // Tạo song record thô trước để lấy ID
+    const song = await prisma.song.create({
+      data: {
+        title: data.title,
+        genreId: data.genreId || null,
+        albumId: data.albumId || null,
+        coverUrl: coverUrl,
+        lyrics: data.lyrics || null,
+        language: data.language || null,
+        duration: data.duration ? parseInt(data.duration) : 0,
+        artistId: artist.id,
+        // Tạo chưa có audio
+        status: 'APPROVED', // Phase 6 = auto approve
+      },
+    });
+
+    const audioExt = files.audio[0].mimetype.split('/')[1] || 'mp3';
+    const aPath = `raw/${artist.id}/${song.id}.${audioExt}`;
+    // upload audio
+    const publicAudioUrl = await SupabaseUtil.uploadBuffer('audio', aPath, files.audio[0].buffer, files.audio[0].mimetype);
+
+    // Update song with public URL
+    await prisma.song.update({
+      where: { id: song.id },
+      data: {
+        audioUrl320: publicAudioUrl,
+        audioUrl128: publicAudioUrl,
+      }
+    });
+
+    return { songId: song.id, title: song.title, status: 'APPROVED' };
+  },
+
+  // 2.6: Cập nhật bài hát
+  updateSong: async (userId: string, songId: string, data: any, coverFile?: Express.Multer.File) => {
+    const artist = await prisma.artist.findUnique({ where: { userId } });
+    if (!artist) throw new AppError('Bạn không có quyền', 403, ErrorCodes.FORBIDDEN);
+
+    const song = await prisma.song.findUnique({ where: { id: songId } });
+    if (!song || song.artistId !== artist.id) throw new AppError('Bài hát không hợp lệ', 403, ErrorCodes.FORBIDDEN);
+
+    let coverUrl = song.coverUrl;
+    if (coverFile) {
+      const ext = coverFile.mimetype.split('/')[1] || 'jpg';
+      const cPath = `covers/${artist.id}/${Date.now()}.${ext}`;
+      coverUrl = await SupabaseUtil.uploadBuffer('images', cPath, coverFile.buffer, coverFile.mimetype);
+    }
+
+    const updated = await prisma.song.update({
+      where: { id: songId },
+      data: {
+        title: data.title || song.title,
+        coverUrl,
+        lyrics: data.lyrics !== undefined ? data.lyrics : song.lyrics,
+        albumId: data.albumId !== undefined ? (data.albumId || null) : song.albumId,
+      }
+    });
+    return updated;
+  },
+
+  // 2.7: Xóa bài hát
+  deleteSong: async (userId: string, songId: string) => {
+    const artist = await prisma.artist.findUnique({ where: { userId } });
+    if (!artist) throw new AppError('Bạn không có quyền', 403, ErrorCodes.FORBIDDEN);
+
+    const song = await prisma.song.findUnique({ where: { id: songId } });
+    if (!song || song.artistId !== artist.id) throw new AppError('Bài hát không hợp lệ', 403, ErrorCodes.FORBIDDEN);
+
+    // Xóa liked/playlists reference
+    await prisma.likedSong.deleteMany({ where: { songId } });
+    await prisma.playlistSong.deleteMany({ where: { songId } });
+    await (prisma as any).playHistory?.deleteMany({ where: { songId } }).catch(() => {});
+
+    await prisma.song.delete({ where: { id: songId } });
+    return { message: 'Đã xóa bài hát' };
+  },
+
   // 3. Lấy stream URL (Bảo vệ bằng Roles)
   getStreamUrl: async (songId: string, role: string, requiredQuality: string) => {
     const song = await prisma.song.findUnique({ where: { id: songId } });

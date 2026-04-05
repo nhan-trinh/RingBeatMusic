@@ -1,0 +1,20 @@
+{
+  "id": "6ab575c1-a257-4f35-916d-e2e3d151557f",
+  "title": "wmd - ficus",
+  "artistId": "8f9189ba-9931-44f1-bf2c-a83fa89f00eb",
+  "albumId": "c2d63002-2378-4fd2-b1f8-227339b9b762",
+  "genreId": null,
+  "duration": 240,
+  "audioUrl128": "raw/8f9189ba-9931-44f1-bf2c-a83fa89f00eb/6ab575c1-a257-4f35-916d-e2e3d151557f.mpeg",
+  "audioUrl320": "raw/8f9189ba-9931-44f1-bf2c-a83fa89f00eb/6ab575c1-a257-4f35-916d-e2e3d151557f.mpeg",
+  "coverUrl": "https://lmtoyvyjoipqcuhjomor.supabase.co/storage/v1/object/public/images/covers/8f9189ba-9931-44f1-bf2c-a83fa89f00eb/1775367025701.png",
+  "lyrics": "test",
+  "syncedLyrics": null,
+  "language": "vi",
+  "releaseDate": null,
+  "status": "APPROVED",
+  "playCount": 0,
+  "likeCount": 0,
+  "createdAt": "2026-04-05T05:30:27.762Z",
+  "updatedAt": "2026-04-05T05:30:30.329Z"
+}

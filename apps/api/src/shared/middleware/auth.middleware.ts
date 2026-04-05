@@ -65,3 +65,24 @@ export const authorize = (...roles: Role[]) => {
 };
 
 export const authenticate = authMiddleware;
+
+// Middleware auth tùy chọn – gắn user nếu có token, không block nếu không có
+export const optionalAuthMiddleware = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(); // Không có token → tiếp tục mà không gắn user
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as JwtPayload;
+    req.user = { id: payload.sub, role: payload.role, jti: payload.jti, exp: payload.exp };
+  } catch {
+    // Token lỗi → bỏ qua, tiếp tục như anonymous
+  }
+  next();
+};

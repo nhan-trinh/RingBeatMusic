@@ -22,6 +22,28 @@ export const songController = {
     sendSuccess(res, result, 'Upload hoàn tất');
   }),
 
+  uploadSongFiles: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (!files || !files.audio || !files.audio[0]) {
+      res.status(400).json({ message: 'Vui lòng cung cấp file audio' }); return;
+    }
+    const result = await SongService.uploadSongFiles(user.id, req.body, files);
+    sendSuccess(res, result, 'Bài hát đã được thêm vào thư viện', 201);
+  }),
+
+  updateSong: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await SongService.updateSong(user.id, req.params.id, req.body, req.file);
+    sendSuccess(res, result, 'Cập nhật bài hát thành công');
+  }),
+
+  deleteSong: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await SongService.deleteSong(user.id, req.params.id);
+    sendSuccess(res, result, 'Xoá bài hát thành công');
+  }),
+
   getStreamUrl: catchAsync(async (req: Request, res: Response) => {
     // If not logged in, we reject them at middleware.
     const user = req.user!;

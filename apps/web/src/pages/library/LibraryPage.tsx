@@ -4,6 +4,7 @@ import { Play, Heart, Music2, CheckCircle2, Clock } from 'lucide-react';
 import { api } from '../../lib/api';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
+import { SongContextMenu, useContextMenu } from '../../components/shared/SongContextMenu';
 
 const LibrarySkeletonRow = () => (
   <div className="flex items-center gap-4 px-4 py-2 animate-pulse">
@@ -37,8 +38,10 @@ export const LibraryPage = () => {
   const [loading, setLoading] = useState(true);
 
   const { setQueueAndPlay, currentTrack, isPlaying, togglePlay, currentContextId } = usePlayerStore();
-  const { isLiked, toggleLike, isFollowing, toggleFollow } = useLibraryStore();
+  const { isLiked, toggleLike, isFollowing, toggleFollow, libraryVersion } = useLibraryStore();
+  const { menu, openMenu, closeMenu } = useContextMenu();
 
+  // Re-fetch sau khi API hoàn thành (libraryVersion++ trigger effect này)
   useEffect(() => {
     const fetchLibrary = async () => {
       setLoading(true);
@@ -52,7 +55,7 @@ export const LibraryPage = () => {
       }
     };
     fetchLibrary();
-  }, []);
+  }, [libraryVersion]); // 👈 Chỉ re-fetch khi libraryVersion báo hiệu API đã xử lý xong
 
   const LIBRARY_CONTEXT_ID = 'liked-songs-library';
 
@@ -183,6 +186,14 @@ export const LibraryPage = () => {
                     <div
                       key={song.id}
                       onDoubleClick={() => handlePlayTrack(idx)}
+                      onContextMenu={(e) => openMenu(e, {
+                        id: song.id,
+                        title: song.title,
+                        artistName: song.artistName,
+                        coverUrl: song.coverUrl,
+                        audioUrl: song.audioUrl,
+                        duration: song.duration,
+                      })}
                       className="group grid grid-cols-[16px_1fr_auto] gap-4 items-center px-4 py-2 rounded-md hover:bg-white/10 cursor-pointer"
                     >
                       <span className="text-[#b3b3b3] text-sm text-center group-hover:hidden">
@@ -225,6 +236,19 @@ export const LibraryPage = () => {
                 })
               )}
             </div>
+
+            {/* Context menu */}
+            {menu && (
+              <SongContextMenu
+                song={menu.song}
+                position={menu.position}
+                onClose={closeMenu}
+                onPlay={() => {
+                  const idx = library?.likedSongs?.findIndex((s: any) => s.id === menu.song.id) ?? -1;
+                  if (idx !== -1) handlePlayTrack(idx);
+                }}
+              />
+            )}
           </>
         )}
 

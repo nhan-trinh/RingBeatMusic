@@ -23,3 +23,10 @@ songRouter.delete('/:id/like', songController.unlikeSong);
 songRouter.post('/with-url', authorize('ARTIST'), songController.createWithUrl);
 songRouter.post('/', authorize('ARTIST'), validateRequest(createSongSchema), songController.createMetadata);
 songRouter.post('/:id/upload-complete', authorize('ARTIST'), songController.uploadComplete);
+
+import multer from 'multer';
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+songRouter.post('/upload-file', authorize('ARTIST'), upload.fields([{ name: 'audio', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), songController.uploadSongFiles);
+songRouter.patch('/:id', authorize('ARTIST'), upload.single('cover'), songController.updateSong);
+songRouter.delete('/:id', authorize('ARTIST'), songController.deleteSong);

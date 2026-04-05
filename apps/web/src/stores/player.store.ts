@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Howl } from 'howler';
+import { api } from '../lib/api';
 
 export interface Track {
   id: string;
@@ -24,6 +25,7 @@ interface PlayerState {
   originalQueue: Track[];
   currentContextId: string | null;
   _howl: Howl | null;
+  hasRecordedPlay: boolean;
   
   setQueueAndPlay: (queue: Track[], startIndex?: number, contextId?: string) => void;
   playTrack: (index: number) => void;
@@ -54,11 +56,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   originalQueue: [],
   currentContextId: null,
   _howl: null,
+  hasRecordedPlay: false,
 
   updateProgress: () => {
-    const { _howl, isPlaying } = get();
+    const { _howl, isPlaying, currentTrack, hasRecordedPlay } = get();
     if (_howl && isPlaying) {
-      set({ progress: _howl.seek() as number });
+      const currentProgress = _howl.seek() as number;
+      set({ progress: currentProgress });
+
+      // Ghi nhận lượt nghe nếu phát hơn 10 giây
+      if (currentProgress > 10 && !hasRecordedPlay && currentTrack) {
+        set({ hasRecordedPlay: true });
+        api.post(`/songs/${currentTrack.id}/play`).catch(() => {});
+      }
     }
   },
 
@@ -123,6 +133,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       currentIndex: index,
       progress: 0,
       duration: track.duration || 0,
+      hasRecordedPlay: false,
     });
 
     sound.play();

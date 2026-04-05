@@ -60,6 +60,17 @@ export const HomeService = {
       }
     });
 
+    // 6. ✅ NEW ALBUMS – Album mới nhất
+    const newAlbums = await prisma.album.findMany({
+      where: { status: 'PUBLISHED' },
+      take: 8,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        artist: { select: { id: true, stageName: true, avatarUrl: true } },
+        _count: { select: { songs: true } },
+      },
+    });
+
     const mapSong = (s: any) => ({
       id: s.id,
       title: s.title,
@@ -68,6 +79,16 @@ export const HomeService = {
       coverUrl: s.coverUrl,
       audioUrl: s.audioUrl320 || s.audioUrl128,
       duration: s.duration,
+    });
+
+    const mapAlbum = (a: any) => ({
+      id: a.id,
+      title: a.title,
+      coverUrl: a.coverUrl,
+      artistName: a.artist.stageName,
+      artistId: a.artist.id,
+      songCount: a._count?.songs || 0,
+      releaseDate: a.releaseDate,
     });
 
     const formatPlaylistCards = (playlists: any[]) => playlists.map(p => ({
@@ -84,6 +105,7 @@ export const HomeService = {
       trending: formatPlaylistCards(trending),
       newReleases: newReleaseSongs.map(mapSong),
       topSongs: topSongs.map(mapSong),
+      newAlbums: newAlbums.map(mapAlbum),
     };
   }
 };

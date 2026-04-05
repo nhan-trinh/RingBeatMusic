@@ -47,6 +47,19 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Public routes không cần auth – không thử refresh/logout khi gặp 401
+    const PUBLIC_ROUTE_PATTERNS = [
+      /\/playlists\/[^/]+$/,
+      /\/albums\/[^/]+$/,
+      /\/artists\/[^/]+$/,
+      /\/songs\/[^/]+$/,
+      /\/search/,
+    ];
+    const reqUrl = originalRequest.url || '';
+    if (error.response?.status === 401 && PUBLIC_ROUTE_PATTERNS.some(p => p.test(reqUrl))) {
+      return Promise.reject(error); // Không logout, không redirect
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
