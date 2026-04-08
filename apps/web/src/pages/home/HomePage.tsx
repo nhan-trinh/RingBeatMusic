@@ -81,7 +81,7 @@ export const HomePage = () => {
   }
 
   return (
-    <div className="flex-1 w-full min-h-full overflow-y-auto relative isolate">
+    <div className="flex-1 w-full min-h-full overflow-y-auto relative isolate ">
       {/* Dynamic Gradient Background Layer */}
       <div
         className="absolute inset-0 pointer-events-none transition-colors duration-1000 ease-in-out -z-10"
