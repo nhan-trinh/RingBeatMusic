@@ -9,6 +9,7 @@ export const songRouter = Router();
 // Publicly available (but play tracking and streaming requires auth technically)
 songRouter.get('/mock-queue', songController.getMockQueue);
 songRouter.get('/', songController.getAll);
+songRouter.get('/:id', songController.getOne);
 songRouter.get('/artist/:artistId', songController.getArtistSongs);
 
 // Protected routes (Require login)

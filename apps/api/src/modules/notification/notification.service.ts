@@ -1,10 +1,21 @@
 import { Notification } from './notification.model';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
+import { getIO } from '../../shared/socket/socket.server';
 
 export const NotificationService = {
-  // Tạo notification và push realtime (Socket.IO inject từ bên ngoài)
+  // Tạo notification và push realtime
   createNotification: async (userId: string, type: string, title: string, body: string, data?: Record<string, unknown>) => {
     const notification = await Notification.create({ userId, type, title, body, data });
+
+    // Push realtime qua Socket.io
+    try {
+      const io = getIO();
+      // Emit tới room của user (đã join trong socket.server.ts)
+      io.to(`user:${userId}`).emit('new_notification', notification);
+    } catch (error) {
+      console.error('❌ Lỗi đẩy thông báo qua Socket.io:', error);
+      // Không ném lỗi ra ngoài vì notify thất bại không nên là lỗi chặn luồng nghiệp vụ
+    }
 
     // Giữ tối đa 100 notification mỗi user (FIFO)
     const count = await Notification.countDocuments({ userId });
@@ -47,5 +58,11 @@ export const NotificationService = {
   getUnreadCount: async (userId: string) => {
     const count = await Notification.countDocuments({ userId, isRead: false });
     return { count };
+  },
+
+  deleteNotification: async (userId: string, notificationId: string) => {
+    const n = await Notification.findOneAndDelete({ _id: notificationId, userId });
+    if (!n) throw new AppError('Notification không tồn tại', 404, ErrorCodes.NOT_FOUND);
+    return { message: 'Đã xóa thông báo' };
   },
 };

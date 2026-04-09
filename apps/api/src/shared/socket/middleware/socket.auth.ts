@@ -14,9 +14,9 @@ export const socketAuthMiddleware = (socket: Socket, next: (err?: Error) => void
 
     // Gắn thông tin vào socket để dùng sau này
     (socket as any).user = {
-      id: decoded.id,
+      id: decoded.sub, // 'sub' chứa userId trong payload JWT
       role: decoded.role,
-      name: decoded.name // or custom payloads
+      name: decoded.name
     };
 
     next();

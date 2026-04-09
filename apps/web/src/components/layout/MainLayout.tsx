@@ -1,13 +1,40 @@
-
+import { useEffect } from 'react';
 import { Sidebar } from '../layout/Sidebar';
 import { Topbar } from '../layout/Topbar';
 import { PlayerBar } from '../player/PlayerBar';
 import { Outlet } from 'react-router-dom';
 import { GlobalBanner } from './GlobalBanner';
+import { useAuthStore } from '../../stores/auth.store';
+import { useNotificationStore } from '../../stores/notification.store';
+import { socketService } from '../../lib/socket';
+import { Toaster } from 'sonner';
 
 export const MainLayout = () => {
+  const { isAuthenticated } = useAuthStore();
+  const { initialize, fetchNotifications } = useNotificationStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // 1. Kết nối Socket
+      socketService.connect();
+      
+      // 2. Khởi tạo store (listeners)
+      initialize();
+      
+      // 3. Lấy dữ liệu ban đầu
+      fetchNotifications();
+    } else {
+      socketService.disconnect();
+    }
+
+    return () => {
+      // Tạm thời không disconnect khi unmount layout để tránh treo/nối lại liên tục
+    };
+  }, [isAuthenticated, initialize, fetchNotifications]);
+
   return (
     <div className="flex h-screen w-full flex-col bg-[#000000] overflow-hidden text-white">
+      <Toaster richColors position="top-right" theme="dark" />
       <GlobalBanner />
       {/* Top Section: Sidebar + Main Content */}
       <div className="flex flex-1 overflow-hidden p-2 gap-2 pb-0">

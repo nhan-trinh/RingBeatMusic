@@ -17,9 +17,11 @@ export const PlayerBar = () => {
       <div className="flex w-[30%] min-w-[180px] items-center gap-3">
         {currentTrack && (
           <>
-            <img src={currentTrack.coverUrl} alt="Cover" className="w-14 h-14 rounded shadow-lg flex-shrink-0" />
+            <Link to={`/track/${currentTrack.id}`} className="hover:opacity-80 transition-opacity flex-shrink-0">
+              <img src={currentTrack.coverUrl} alt="Cover" className="w-14 h-14 rounded shadow-lg" />
+            </Link>
             <div className="flex flex-col min-w-0">
-              <span className="text-white text-sm font-medium hover:underline cursor-pointer line-clamp-1">{currentTrack.title}</span>
+              <Link to={`/track/${currentTrack.id}`} className="text-white text-sm font-medium hover:underline cursor-pointer line-clamp-1">{currentTrack.title}</Link>
               <Link to={`/artist/${currentTrack.artistId}`} className="text-[#b3b3b3] text-xs hover:underline cursor-pointer line-clamp-1">{currentTrack.artistName}</Link>
             </div>
             <button

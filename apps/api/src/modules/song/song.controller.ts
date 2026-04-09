@@ -124,4 +124,9 @@ export const songController = {
     ];
     sendSuccess(res, mockSongs, 'Lấy mock queue thành công');
   }),
+
+  getOne: catchAsync(async (req: Request, res: Response) => {
+    const result = await SongService.getById(req.params.id);
+    sendSuccess(res, result);
+  }),
 };

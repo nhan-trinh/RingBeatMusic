@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { History, User as UserIcon, Shield, Music, Settings, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Shield, Music, Settings, AlertTriangle, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminAuditLogsPage = () => {

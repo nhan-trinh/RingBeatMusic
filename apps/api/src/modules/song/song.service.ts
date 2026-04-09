@@ -1,6 +1,7 @@
 import { prisma } from '../../shared/config/database';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { SupabaseUtil } from '../../shared/utils/supabase.util';
+import { NotificationService } from '../notification/notification.service';
 
 export const SongService = {
   // 1. Tạo bài hát với URL trực tiếp (Demo mode - không cần Supabase upload)
@@ -20,10 +21,25 @@ export const SongService = {
         artistId: artist.id,
         audioUrl320: data.audioUrl || null,
         audioUrl128: data.audioUrl || null,
-        // TODO Phase 7: đổi lại PENDING khi Moderator Panel hoàn thành
         status: 'APPROVED',
       },
     });
+
+    // Thông báo cho Followers
+    const followers = await prisma.followedArtist.findMany({
+      where: { artistId: artist.id },
+      select: { userId: true }
+    });
+
+    for (const f of followers) {
+      await NotificationService.createNotification(
+        f.userId,
+        'NEW_RELEASE',
+        'Nghệ sĩ bạn theo dõi ra nhạc mới! 🎵',
+        `${artist.stageName} vừa phát hành bài hát mới: "${song.title}". Nghe ngay thôi!`,
+        { songId: song.id, artistId: artist.id }
+      );
+    }
 
     return { songId: song.id, title: song.title, status: song.status };
   },
@@ -238,5 +254,18 @@ export const SongService = {
       ]);
     }
     return { message: 'Unliked' };
+  },
+  getById: async (id: string) => {
+    const song = await prisma.song.findUnique({
+      where: { id },
+      include: {
+        artist: true,
+        album: true,
+        genre: true,
+      },
+    });
+
+    if (!song) throw new AppError('Không tìm thấy bài hát', 404, ErrorCodes.NOT_FOUND);
+    return song;
   },
 };

@@ -27,4 +27,10 @@ export const notificationController = {
     const result = await NotificationService.getUnreadCount(user.id);
     sendSuccess(res, result);
   }),
+
+  deleteNotification: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await NotificationService.deleteNotification(user.id, req.params.id);
+    sendSuccess(res, result);
+  }),
 };

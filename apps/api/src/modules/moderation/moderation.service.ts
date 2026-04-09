@@ -2,6 +2,7 @@ import { prisma } from '../../shared/config/database';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { meilisearch } from '../../shared/config/meilisearch';
 import { redis } from '../../shared/config/redis';
+import { NotificationService } from '../notification/notification.service';
 
 export const ModerationService = {
   // 1. Lấy danh sách bài hát PENDING
@@ -20,7 +21,7 @@ export const ModerationService = {
   approveSong: async (moderatorId: string, songId: string) => {
     const song = await prisma.song.findUnique({
       where: { id: songId },
-      include: { artist: { select: { userId: true, stageName: true } } },
+      include: { artist: { select: { id: true, userId: true, stageName: true } } },
     });
     if (!song) throw new AppError('Bài hát không tồn tại', 404, ErrorCodes.NOT_FOUND);
     if (song.status !== 'PENDING') throw new AppError('Bài hát không ở trạng thái PENDING', 400, ErrorCodes.VALIDATION_ERROR);
@@ -41,12 +42,41 @@ export const ModerationService = {
       }]);
     } catch (e) { console.error('Meilisearch index error:', e); }
 
+    // --- THÔNG BÁO ---
+    // 1. Thông báo cho Artist
+    await NotificationService.createNotification(
+      song.artist.userId,
+      'CONTENT_APPROVED',
+      'Bài hát đã được duyệt! 🎉',
+      `Chúc mừng! Bài hát "${song.title}" của bạn đã được kiểm duyệt thành công và hiện đã có mặt trên hệ thống.`,
+      { songId: song.id }
+    );
+
+    // 2. Thông báo cho Followers (Push mỏi tay)
+    const followers = await prisma.followedArtist.findMany({
+      where: { artistId: song.artist.id },
+      select: { userId: true }
+    });
+
+    for (const f of followers) {
+      await NotificationService.createNotification(
+        f.userId,
+        'NEW_RELEASE',
+        'Nghệ sĩ bạn theo dõi ra nhạc mới! 🎵',
+        `${song.artist.stageName} vừa phát hành bài hát mới: "${song.title}". Nghe ngay thôi!`,
+        { songId: song.id, artistId: song.artist.id }
+      );
+    }
+
     return { message: `Đã duyệt bài hát "${song.title}"` };
   },
 
   // 3. Từ chối bài hát
   rejectSong: async (moderatorId: string, songId: string, reason: string) => {
-    const song = await prisma.song.findUnique({ where: { id: songId } });
+    const song = await prisma.song.findUnique({ 
+      where: { id: songId },
+      include: { artist: { select: { userId: true } } }
+    });
     if (!song) throw new AppError('Bài hát không tồn tại', 404, ErrorCodes.NOT_FOUND);
     if (song.status !== 'PENDING') throw new AppError('Bài hát không ở trạng thái PENDING', 400, ErrorCodes.VALIDATION_ERROR);
 
@@ -57,10 +87,19 @@ export const ModerationService = {
       }),
     ]);
 
+    // Thông báo cho Artist lý do từ chối
+    await NotificationService.createNotification(
+      song.artist.userId,
+      'CONTENT_REJECTED',
+      'Bài hát bị từ chối ⛔',
+      `Bài hát "${song.title}" của bạn không được duyệt. Lý do: ${reason}`,
+      { songId: song.id }
+    );
+
     return { message: `Đã từ chối bài hát "${song.title}"` };
   },
 
-  // 4. Danh sách Reports
+  // ... (getReports, resolveReport giữ nguyên)
   getReports: async (status?: string) => {
     return await prisma.report.findMany({
       where: status ? { status: status as any } : {},
@@ -73,7 +112,6 @@ export const ModerationService = {
     });
   },
 
-  // 5. Xử lý report
   resolveReport: async (moderatorId: string, reportId: string, action: 'RESOLVED' | 'DISMISSED') => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report) throw new AppError('Report không tồn tại', 404, ErrorCodes.NOT_FOUND);
@@ -99,11 +137,27 @@ export const ModerationService = {
 
     const totalStrikes = await prisma.strike.count({ where: { userId: targetUserId } });
 
+    // Gửi thông báo cảnh cáo
+    await NotificationService.createNotification(
+      targetUserId,
+      'STRIKE_ISSUED',
+      'Cảnh cáo vi phạm! ⚠️',
+      `Bạn vừa nhận 1 gậy cảnh cáo vì lý do: ${reason}. Hiện tại bạn đang có ${totalStrikes}/3 gậy.`,
+      { strikeId: strike.id, totalStrikes }
+    );
+
     if (totalStrikes >= 3) {
       // Auto-ban
       await prisma.user.update({ where: { id: targetUserId }, data: { isBanned: true, banReason: 'Bị khóa do vi phạm 3 lần' } });
-      // Blacklist tất cả refresh tokens
       await redis.del(`refresh_token:${targetUserId}`);
+      
+      // Thông báo khóa TK
+      await NotificationService.createNotification(
+        targetUserId,
+        'ACCOUNT_BANNED',
+        'Tài khoản đã bị khóa vĩnh viễn 🔒',
+        'Do vi phạm quy định nhiều lần (3 gậy), tài khoản của bạn đã bị khóa vĩnh viễn. Mọi thắc mắc vui lòng liên hệ hỗ trợ.'
+      );
     }
 
     return { strike, totalStrikes, banned: totalStrikes >= 3 };

@@ -13,6 +13,7 @@ import { HomePage } from './pages/home/HomePage';
 import { SearchPage } from './pages/search/SearchPage';
 import { PlaylistPage } from './pages/playlist/PlaylistPage';
 import { ArtistPage } from './pages/artist/ArtistPage';
+import { TrackPage } from './pages/track/TrackPage';
 import { LibraryPage } from './pages/library/LibraryPage';
 import { AlbumPage } from './pages/album/AlbumPage';
 import { ArtistDashboardLayout } from './pages/artist-dashboard/ArtistDashboardLayout';
@@ -31,15 +32,7 @@ import { useLibraryStore } from './stores/library.store';
 import { useAuthStore } from './stores/auth.store';
 import { useEffect } from 'react';
 
-// Placeholder tạm thời — xóa khi implement từng page
-const PlaceholderPage = ({ name, color = "#1DB954" }: { name: string, color?: string }) => (
-  <div className="flex h-[200vh] flex-col items-center pt-24 text-white" style={{ background: `linear-gradient(to bottom, ${color}33, #121212 500px)` }}>
-    <div className="text-center">
-      <h1 className="text-4xl font-bold mb-2">Spotify Clone</h1>
-      <p className="text-[#B3B3B3]">Trang {name} — Đang phát triển</p>
-    </div>
-  </div>
-);
+// Màn hình full không có Sidebar (cho Login/Register)
 
 // Màn hình full không có Sidebar (cho Login/Register)
 function App() {
@@ -71,7 +64,8 @@ function App() {
           <Route path="/playlist/:id" element={<PlaylistPage />} />
           <Route path="/album/:id" element={<AlbumPage />} />
           <Route path="/artist/:id" element={<ArtistPage />} />
-          <Route path="/song/:id" element={<PlaceholderPage name="Bài hát" color="#1DB954" />} />
+          <Route path="/track/:id" element={<TrackPage />} />
+          <Route path="/song/:id" element={<Navigate to="/track/:id" replace />} />
         </Route>
 
         {/* Artist Dashboard (full screen, no MainLayout) */}

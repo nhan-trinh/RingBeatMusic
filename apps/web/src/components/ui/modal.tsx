@@ -22,16 +22,17 @@ export const Modal: React.FC<ModalProps> = ({
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      setTimeout(() => setAnimate(true), 10);
+      timer = setTimeout(() => setAnimate(true), 10);
     } else {
       setAnimate(false);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         document.body.style.overflow = 'unset';
       }, 300);
-      return () => clearTimeout(timer);
     }
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   // Handle ESC key

@@ -2,6 +2,7 @@ import { prisma } from '../../shared/config/database';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { redis } from '../../shared/config/redis';
 import bcrypt from 'bcryptjs';
+import { NotificationService } from '../notification/notification.service';
 
 export const AdminService = {
   // ── User Management ──
@@ -28,6 +29,16 @@ export const AdminService = {
   changeUserRole: async (adminId: string, targetId: string, role: string) => {
     const updated = await prisma.user.update({ where: { id: targetId }, data: { role: role as any } });
     await prisma.auditLog.create({ data: { actorId: adminId, action: 'ROLE_CHANGED', targetId, targetType: 'user', metadata: { newRole: role } } });
+
+    // Thông báo cho người dùng
+    await NotificationService.createNotification(
+      targetId,
+      'ROLE_UPDATED',
+      'Vai trò tài khoản đã thay đổi 👤',
+      `Tài khoản của bạn đã được Admin cập nhật vai trò mới: ${role}.`,
+      { newRole: role }
+    );
+
     return updated;
   },
 
@@ -35,12 +46,31 @@ export const AdminService = {
     await prisma.user.update({ where: { id: targetId }, data: { isBanned: true, banReason: reason } });
     await redis.del(`refresh_token:${targetId}`);
     await prisma.auditLog.create({ data: { actorId: adminId, action: 'USER_BANNED', targetId, targetType: 'user', metadata: { reason } } });
+
+    // Thông báo cho người dùng
+    await NotificationService.createNotification(
+      targetId,
+      'ACCOUNT_BANNED',
+      'Tài khoản đã bị tạm khóa 🔒',
+      `Tài khoản của bạn đã bị khóa bởi Admin. Lý do: ${reason}`,
+      { reason }
+    );
+
     return { message: 'Đã khóa tài khoản' };
   },
 
   unbanUser: async (adminId: string, targetId: string) => {
     await prisma.user.update({ where: { id: targetId }, data: { isBanned: false, banReason: null } });
     await prisma.auditLog.create({ data: { actorId: adminId, action: 'USER_UNBANNED', targetId, targetType: 'user' } });
+
+    // Thông báo cho người dùng
+    await NotificationService.createNotification(
+      targetId,
+      'ACCOUNT_UNBANNED',
+      'Tài khoản đã được mở khóa 🔓',
+      'Chào mừng bạn trở lại! Tài khoản của bạn đã được Admin mở khóa.'
+    );
+
     return { message: 'Đã mở khóa tài khoản' };
   },
 
@@ -48,11 +78,19 @@ export const AdminService = {
     const tempPassword = Math.random().toString(36).slice(-8);
     const hash = await bcrypt.hash(tempPassword, 10);
     await prisma.user.update({ where: { id: targetId }, data: { passwordHash: hash } });
-    // TODO: gửi email kèm tempPassword
+    
+    // Thông báo cho người dùng (có thể gửi mail sau này)
+    await NotificationService.createNotification(
+      targetId,
+      'SECURITY_ALERT',
+      'Mật khẩu đã được đặt lại 🔑',
+      'Admin đã đặt lại mật khẩu cho bạn. Vui lòng kiểm tra email hoặc liên hệ Admin để nhận mật khẩu tạm thời.'
+    );
+
     return { message: 'Đã đặt lại mật khẩu', tempPassword };
   },
 
-  // ── Content Management ──
+  // ... (Content Management)
   getAllSongs: async (page = 1, limit = 20) => {
     const [songs, total] = await Promise.all([
       prisma.song.findMany({
@@ -74,8 +112,22 @@ export const AdminService = {
   },
 
   verifyArtist: async (adminId: string, artistId: string) => {
-    await prisma.artist.update({ where: { id: artistId }, data: { isVerified: true } });
+    const artist = await prisma.artist.update({ 
+      where: { id: artistId }, 
+      data: { isVerified: true },
+      include: { user: { select: { id: true } } }
+    });
     await prisma.auditLog.create({ data: { actorId: adminId, action: 'ROLE_CHANGED', targetId: artistId, targetType: 'artist' } });
+
+    // Thông báo cho artist
+    await NotificationService.createNotification(
+      artist.user.id,
+      'ARTIST_VERIFIED',
+      'Bạn đã nhận được dấu tích xanh! ✅',
+      'Chúc mừng! Hồ sơ nghệ sĩ của bạn đã được xác minh chính thức. Badge tích xanh đã được hiển thị trên trang cá nhân.',
+      { artistId }
+    );
+
     return { message: 'Đã cấp Verified Badge' };
   },
 
