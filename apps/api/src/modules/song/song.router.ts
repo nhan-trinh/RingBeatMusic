@@ -28,6 +28,14 @@ songRouter.post('/:id/upload-complete', authorize('ARTIST'), songController.uplo
 import multer from 'multer';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
-songRouter.post('/upload-file', authorize('ARTIST'), upload.fields([{ name: 'audio', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), songController.uploadSongFiles);
-songRouter.patch('/:id', authorize('ARTIST'), upload.single('cover'), songController.updateSong);
+songRouter.post('/upload-file', authorize('ARTIST'), upload.fields([
+  { name: 'audio', maxCount: 1 }, 
+  { name: 'cover', maxCount: 1 },
+  { name: 'canvas', maxCount: 1 }
+]), songController.uploadSongFiles);
+
+songRouter.patch('/:id', authorize('ARTIST'), upload.fields([
+  { name: 'cover', maxCount: 1 },
+  { name: 'canvas', maxCount: 1 }
+]), songController.updateSong);
 songRouter.delete('/:id', authorize('ARTIST'), songController.deleteSong);

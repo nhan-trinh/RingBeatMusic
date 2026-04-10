@@ -34,7 +34,8 @@ export const songController = {
 
   updateSong: catchAsync(async (req: Request, res: Response) => {
     const user = req.user!;
-    const result = await SongService.updateSong(user.id, req.params.id, req.body, req.file);
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const result = await SongService.updateSong(user.id, req.params.id, req.body, files);
     sendSuccess(res, result, 'Cập nhật bài hát thành công');
   }),
 

@@ -9,6 +9,7 @@ const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: (
   });
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [canvasFile, setCanvasFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,6 +24,7 @@ const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: (
       formData.append('title', form.title);
       formData.append('audio', audioFile);
       if (coverFile) formData.append('cover', coverFile);
+      if (canvasFile) formData.append('canvas', canvasFile);
       if (form.lyrics) formData.append('lyrics', form.lyrics);
       if (form.duration) formData.append('duration', form.duration);
       if (form.albumId) formData.append('albumId', form.albumId);
@@ -70,6 +72,15 @@ const UploadModal = ({ albums, onClose, onSuccess }: { albums: any[], onClose: (
               accept="image/*"
               className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
               onChange={e => setCoverFile(e.target.files?.[0] || null)}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Spotify Canvas (Video loop {"<"} 10s)</label>
+            <input
+              type="file"
+              accept="video/*"
+              className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
+              onChange={e => setCanvasFile(e.target.files?.[0] || null)}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -130,6 +141,7 @@ const EditModal = ({ song, albums, onClose, onSuccess }: { song: any, albums: an
     title: song.title || '', lyrics: song.lyrics || '', albumId: song.albumId || '',
   });
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [canvasFile, setCanvasFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +155,7 @@ const EditModal = ({ song, albums, onClose, onSuccess }: { song: any, albums: an
       const formData = new FormData();
       formData.append('title', form.title);
       if (coverFile) formData.append('cover', coverFile);
+      if (canvasFile) formData.append('canvas', canvasFile);
       if (form.lyrics !== song.lyrics) formData.append('lyrics', form.lyrics);
       formData.append('albumId', form.albumId || '');
 
@@ -181,6 +194,18 @@ const EditModal = ({ song, albums, onClose, onSuccess }: { song: any, albums: an
             />
             {song.coverUrl && !coverFile && (
               <p className="text-xs text-[#b3b3b3] mt-1">Đang dùng ảnh hiện tại.</p>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-[#b3b3b3] mb-1 block">Thay đổi Video Canvas (MP4/WebM)</label>
+            <input
+              type="file"
+              accept="video/*"
+              className="w-full bg-[#3e3e3e] rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-[#1DB954]"
+              onChange={e => setCanvasFile(e.target.files?.[0] || null)}
+            />
+            {song.canvasUrl && !canvasFile && (
+              <p className="text-xs text-[#b3b3b3] mt-1">Đang dùng video hiện tại.</p>
             )}
           </div>
           <div>

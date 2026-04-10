@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Sidebar } from '../layout/Sidebar';
 import { Topbar } from '../layout/Topbar';
 import { PlayerBar } from '../player/PlayerBar';
+import { NowPlayingSidebar } from '../player/NowPlayingSidebar';
 import { Outlet } from 'react-router-dom';
 import { GlobalBanner } from './GlobalBanner';
 import { useAuthStore } from '../../stores/auth.store';
@@ -52,6 +53,8 @@ export const MainLayout = () => {
             <Outlet />
           </div>
         </main>
+
+        <NowPlayingSidebar />
       </div>
 
       {/* Bottom Section: Player Bar */}

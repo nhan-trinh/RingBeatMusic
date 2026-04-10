@@ -84,6 +84,7 @@ export const TrackPage = () => {
         artistId: song.artistId,
         coverUrl: song.coverUrl,
         audioUrl: song.audioUrl320 || song.audioUrl128,
+        canvasUrl: song.canvasUrl,
         duration: song.duration
       };
       setQueueAndPlay([track], 0, `track:${song.id}`);

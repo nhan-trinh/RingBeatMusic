@@ -89,7 +89,8 @@ export const ArtistPage = () => {
     artistName: item.song.artist.stageName,
     artistId: item.song.artistId,
     coverUrl: item.song.coverUrl,
-    audioUrl: item.audioUrl,
+    audioUrl: item.song.audioUrl320 || item.song.audioUrl128,
+    canvasUrl: item.song.canvasUrl,
     duration: item.song.duration,
   }));
 

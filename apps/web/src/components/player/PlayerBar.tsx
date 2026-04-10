@@ -1,14 +1,25 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
+import { useUIStore } from '../../stores/ui.store';
 import { PlaybackControls } from './PlaybackControls';
 import { VolumeControl } from './VolumeControl';
-import { Heart, Mic2, ListMusic, PictureInPicture2, Maximize2 } from 'lucide-react';
+import { Heart, Mic2, ListMusic, PictureInPicture2, Maximize2, PlaySquare } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { cn } from '../../lib/utils';
 
 export const PlayerBar = () => {
   const { currentTrack } = usePlayerStore();
   const { isLiked, toggleLike } = useLibraryStore();
+  const { isNowPlayingVisible, toggleNowPlaying, setNowPlayingVisible } = useUIStore();
+
+  // Tự động mở Sidebar khi phát nhạc mới
+  useEffect(() => {
+    if (currentTrack) {
+      setNowPlayingVisible(true);
+    }
+  }, [currentTrack?.id, setNowPlayingVisible]);
 
   return (
     <div className="h-[90px] border-[#282828] flex items-center justify-between px-4 fixed bottom-0 w-full z-50">
@@ -46,6 +57,26 @@ export const PlayerBar = () => {
       {/* 3. Extra Controls (Bên phải - Thêm Volume và các Options) */}
       <div className="flex w-[30%] min-w-[280px] items-center justify-end gap-3 text-[#b3b3b3]">
         <Tooltip.Provider delayDuration={200}>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <button 
+                onClick={toggleNowPlaying}
+                className={cn(
+                  "hover:text-white transition-all p-1",
+                  isNowPlayingVisible ? "text-[#1DB954]" : "text-[#b3b3b3]"
+                )}
+                disabled={!currentTrack}
+              >
+                <PlaySquare size={16} fill={isNowPlayingVisible ? "currentColor" : "none"} />
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content className="bg-[#282828] text-white text-[12px] px-2 py-[6px] shadow-xl rounded font-medium z-[100]" sideOffset={8}>
+                Chế độ xem Đang phát
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+
           {[
             { icon: Mic2, label: 'Lời bài hát' },
             { icon: ListMusic, label: 'Danh sách chờ' },

@@ -122,12 +122,21 @@ export const SongService = {
     // upload audio
     const publicAudioUrl = await SupabaseUtil.uploadBuffer('audio', aPath, files.audio[0].buffer, files.audio[0].mimetype);
 
+    // Xử lý Canvas nếu có
+    let canvasUrl = null;
+    if (files.canvas?.[0]) {
+      const cExt = files.canvas[0].mimetype.split('/')[1] || 'mp4';
+      const canvasPath = `canvases/${artist.id}/${song.id}.${cExt}`;
+      canvasUrl = await SupabaseUtil.uploadBuffer('videos', canvasPath, files.canvas[0].buffer, files.canvas[0].mimetype);
+    }
+
     // Update song with public URL
     await prisma.song.update({
       where: { id: song.id },
       data: {
         audioUrl320: publicAudioUrl,
         audioUrl128: publicAudioUrl,
+        canvasUrl: canvasUrl,
       }
     });
 
@@ -135,7 +144,7 @@ export const SongService = {
   },
 
   // 2.6: Cập nhật bài hát
-  updateSong: async (userId: string, songId: string, data: any, coverFile?: Express.Multer.File) => {
+  updateSong: async (userId: string, songId: string, data: any, files?: { [fieldname: string]: Express.Multer.File[] }) => {
     const artist = await prisma.artist.findUnique({ where: { userId } });
     if (!artist) throw new AppError('Bạn không có quyền', 403, ErrorCodes.FORBIDDEN);
 
@@ -143,10 +152,17 @@ export const SongService = {
     if (!song || song.artistId !== artist.id) throw new AppError('Bài hát không hợp lệ', 403, ErrorCodes.FORBIDDEN);
 
     let coverUrl = song.coverUrl;
-    if (coverFile) {
-      const ext = coverFile.mimetype.split('/')[1] || 'jpg';
+    if (files?.cover?.[0]) {
+      const ext = files.cover[0].mimetype.split('/')[1] || 'jpg';
       const cPath = `covers/${artist.id}/${Date.now()}.${ext}`;
-      coverUrl = await SupabaseUtil.uploadBuffer('images', cPath, coverFile.buffer, coverFile.mimetype);
+      coverUrl = await SupabaseUtil.uploadBuffer('images', cPath, files.cover[0].buffer, files.cover[0].mimetype);
+    }
+
+    let canvasUrl = song.canvasUrl;
+    if (files?.canvas?.[0]) {
+      const cExt = files.canvas[0].mimetype.split('/')[1] || 'mp4';
+      const canvasPath = `canvases/${artist.id}/${Date.now()}.${cExt}`;
+      canvasUrl = await SupabaseUtil.uploadBuffer('videos', canvasPath, files.canvas[0].buffer, files.canvas[0].mimetype);
     }
 
     const updated = await prisma.song.update({
@@ -154,6 +170,7 @@ export const SongService = {
       data: {
         title: data.title || song.title,
         coverUrl,
+        canvasUrl,
         lyrics: data.lyrics !== undefined ? data.lyrics : song.lyrics,
         albumId: data.albumId !== undefined ? (data.albumId || null) : song.albumId,
       }

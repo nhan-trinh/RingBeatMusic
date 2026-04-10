@@ -79,6 +79,7 @@ export const HomeService = {
       artistId: s.artistId ?? s.artist?.id,
       coverUrl: s.coverUrl,
       audioUrl: s.audioUrl320 || s.audioUrl128,
+      canvasUrl: s.canvasUrl,
       duration: s.duration,
     });
 

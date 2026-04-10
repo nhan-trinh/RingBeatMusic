@@ -9,6 +9,7 @@ export interface Track {
   artistId?: string;
   coverUrl: string;
   audioUrl: string;
+  canvasUrl?: string;
   duration: number; // in seconds
 }
 
