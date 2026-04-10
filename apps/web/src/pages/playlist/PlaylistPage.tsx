@@ -9,6 +9,7 @@ import { Play, Pause, Heart, MoreHorizontal, Clock, Edit2, Camera, X, Loader2 } 
 import { formatTime, cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
 import { SongContextMenu, useContextMenu } from '../../components/shared/SongContextMenu';
+import { PlaylistContextMenu, usePlaylistContextMenu } from '../../components/shared/PlaylistContextMenu';
 
 export const PlaylistPage = () => {
   const { id } = useParams();
@@ -25,6 +26,7 @@ export const PlaylistPage = () => {
   const { isLiked, toggleLike, isFollowingPlaylist, toggleFollowPlaylist } = useLibraryStore();
   const playlistFollowed = id ? isFollowingPlaylist(id) : false;
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
+  const { menu: playlistMenu, openPlaylistMenu, closePlaylistMenu } = usePlaylistContextMenu();
 
   useEffect(() => {
     const fetchPlaylist = async () => {
@@ -246,7 +248,10 @@ export const PlaylistPage = () => {
         >
           <Heart size={32} className={playlistFollowed ? 'fill-[#1db954]' : ''} />
         </button>
-        <button className="text-[#b3b3b3] hover:text-white transition-colors">
+        <button 
+          onClick={(e) => openPlaylistMenu(e, { ...playlist, ownerId: playlist.ownerId })}
+          className="text-[#b3b3b3] hover:text-white transition-colors"
+        >
           <MoreHorizontal size={32} />
         </button>
       </div>
@@ -405,6 +410,14 @@ export const PlaylistPage = () => {
             const idx = playlist.songs.findIndex((s: any) => s.song.id === trackMenu.song.id);
             if (idx !== -1) handleTrackPlay(idx);
           }}
+        />
+      )}
+      {playlistMenu && (
+        <PlaylistContextMenu 
+          playlist={playlistMenu.playlist}
+          position={playlistMenu.position}
+          onClose={closePlaylistMenu}
+          onRename={() => setIsEditing(true)}
         />
       )}
     </div>

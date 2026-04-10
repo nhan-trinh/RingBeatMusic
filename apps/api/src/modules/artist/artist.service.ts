@@ -9,7 +9,12 @@ export const ArtistService = {
       include: {
         songs: {
           where: { status: 'APPROVED' },
-          select: { id: true, title: true, playCount: true, coverUrl: true, audioUrl320: true, audioUrl128: true, duration: true, artistId: true, artist: { select: { id: true, stageName: true } } },
+          select: { 
+            id: true, title: true, playCount: true, coverUrl: true, 
+            audioUrl320: true, audioUrl128: true, canvasUrl: true, 
+            duration: true, artistId: true, 
+            artist: { select: { id: true, stageName: true } } 
+          },
           take: 10,
           orderBy: { playCount: 'desc' }
         },
@@ -34,6 +39,9 @@ export const ArtistService = {
         duration: song.duration,
         playCount: song.playCount,
         coverUrl: song.coverUrl,
+        audioUrl320: song.audioUrl320,
+        audioUrl128: song.audioUrl128,
+        canvasUrl: song.canvasUrl,
         artistId: song.artistId,
         artist: song.artist
       }

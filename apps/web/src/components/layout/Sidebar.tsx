@@ -166,7 +166,7 @@ export const Sidebar = ({ className }: { className?: string }) => {
                 <Link
                   key={playlist.id}
                   to={`/playlist/${playlist.id}`}
-                  onContextMenu={(e) => openPlaylistMenu(e, { ...playlist, isPublic: playlist.isPublic })}
+                  onContextMenu={(e) => openPlaylistMenu(e, { ...playlist, ownerId: playlist.userId, isPublic: playlist.isPublic })}
                   className={clsx(
                     'flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/10 transition-colors cursor-pointer group',
                     location.pathname === `/playlist/${playlist.id}` && 'bg-[#282828]'

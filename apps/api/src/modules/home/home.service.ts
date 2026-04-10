@@ -98,6 +98,7 @@ export const HomeService = {
       title: p.title,
       description: p.description,
       coverUrl: p.coverUrl,
+      ownerId: p.ownerId,
       songs: p.songs.map((ps: any) => mapSong(ps.song))
     }));
 

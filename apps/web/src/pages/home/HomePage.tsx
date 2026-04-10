@@ -154,7 +154,7 @@ const Section = ({ title, showAllLink, children }: { title: string; showAllLink?
 const CardGrid = ({ items }: { items: any[] }) => (
   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 w-full">
     {items?.map((item: any) => (
-      <MediaCard key={item.id} id={item.id} title={item.title} subtitle={item.description} coverUrl={item.coverUrl} songs={item.songs} isPublic={item.isPublic} />
+      <MediaCard key={item.id} id={item.id} title={item.title} subtitle={item.description} coverUrl={item.coverUrl} songs={item.songs} isPublic={item.isPublic} ownerId={item.ownerId} />
     ))}
   </div>
 );

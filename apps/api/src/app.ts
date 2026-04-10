@@ -26,6 +26,9 @@ import { homeRouter } from './modules/home/home.router';
 
 export const createApp = (): Application => {
   const app = express();
+  
+  // Quan trọng cho Deploy: Render dùng reverse proxy, cần bật trust proxy để nhận diện đúng https
+  app.set('trust proxy', 1);
 
   // ---- Security Middleware ----
   app.use(helmet());

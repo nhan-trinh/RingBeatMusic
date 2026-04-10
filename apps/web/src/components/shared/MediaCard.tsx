@@ -16,9 +16,10 @@ interface MediaCardProps {
   songs?: any[];
   type?: 'playlist' | 'album' | 'artist' | 'song';
   isPublic?: boolean;
+  ownerId?: string;
 }
 
-export const MediaCard = ({ id, title, subtitle, coverUrl, isCircle = false, songs = [], type = 'playlist', isPublic }: MediaCardProps) => {
+export const MediaCard = ({ id, title, subtitle, coverUrl, isCircle = false, songs = [], type = 'playlist', isPublic, ownerId }: MediaCardProps) => {
   const { setQueueAndPlay, currentContextId, isPlaying, togglePlay } = usePlayerStore();
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export const MediaCard = ({ id, title, subtitle, coverUrl, isCircle = false, son
     if (type === 'song' && songs && songs.length > 0) {
       openSongMenu(e, songs[0]);
     } else if (type === 'playlist') {
-      openPlaylistMenu(e, { id, title, coverUrl, isPublic });
+      openPlaylistMenu(e, { id, title, coverUrl, isPublic, ownerId: ownerId || '' });
     }
   };
 

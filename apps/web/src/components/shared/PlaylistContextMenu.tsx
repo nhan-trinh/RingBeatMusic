@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Edit2, Trash2, Share2, Globe, Lock } from 'lucide-react';
 import { useLibraryStore } from '../../stores/library.store';
+import { useAuthStore } from '../../stores/auth.store';
 
 interface Playlist {
   id: string;
   title: string;
   coverUrl?: string | null;
   isPublic?: boolean;
+  ownerId: string;
 }
 
 interface PlaylistContextMenuProps {
@@ -23,7 +25,10 @@ export const PlaylistContextMenu = ({
   onRename,
 }: PlaylistContextMenuProps) => {
   const { deletePlaylist, updatePlaylist } = useLibraryStore();
+  const { user } = useAuthStore();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const isOwner = playlist.ownerId === user?.id;
 
   // Điều chỉnh vị trí để không bị tràn màn hình
   const adjustedPos = {
@@ -65,11 +70,13 @@ export const PlaylistContextMenu = ({
         <p className="text-[#b3b3b3] text-[10px] uppercase font-bold tracking-wider">Playlist</p>
       </div>
 
-      <MenuItem 
-        icon={<Edit2 size={15} />} 
-        label="Đổi tên" 
-        onClick={() => { if (onRename) onRename(); onClose(); }} 
-      />
+      {isOwner && (
+        <MenuItem 
+          icon={<Edit2 size={15} />} 
+          label="Đổi tên" 
+          onClick={() => { if (onRename) onRename(); onClose(); }} 
+        />
+      )}
 
       <MenuItem 
         icon={<Share2 size={15} />} 
@@ -81,23 +88,28 @@ export const PlaylistContextMenu = ({
         }} 
       />
 
-      <MenuItem 
-        icon={playlist.isPublic ? <Lock size={15} /> : <Globe size={15} />} 
-        label={playlist.isPublic ? "Đặt làm riêng tư" : "Công khai playlist"} 
-        onClick={async () => {
-          await updatePlaylist(playlist.id, { isPublic: !playlist.isPublic });
-          onClose();
-        }} 
-      />
+      {isOwner && (
+        <MenuItem 
+          icon={playlist.isPublic ? <Lock size={15} /> : <Globe size={15} />} 
+          label={playlist.isPublic ? "Đặt làm riêng tư" : "Công khai playlist"} 
+          onClick={async () => {
+            await updatePlaylist(playlist.id, { isPublic: !playlist.isPublic });
+            onClose();
+          }} 
+        />
+      )}
 
-      <div className="border-t border-[#3e3e3e] my-1" />
-
-      <MenuItem 
-        icon={<Trash2 size={15} />} 
-        label="Xóa" 
-        onClick={handleDelete}
-        danger 
-      />
+      {isOwner && (
+        <>
+          <div className="border-t border-[#3e3e3e] my-1" />
+          <MenuItem 
+            icon={<Trash2 size={15} />} 
+            label="Xóa" 
+            onClick={handleDelete}
+            danger 
+          />
+        </>
+      )}
     </div>
   );
 };
