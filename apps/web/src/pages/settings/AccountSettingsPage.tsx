@@ -3,7 +3,6 @@ import { useAuthStore } from '../../stores/auth.store';
 import { api } from '../../lib/api';
 import { User as UserIcon, Key, Camera, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 export const AccountSettingsPage = () => {
