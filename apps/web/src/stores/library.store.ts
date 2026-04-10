@@ -7,6 +7,7 @@ interface Playlist {
   title: string;
   coverUrl: string | null;
   isPublic: boolean;
+  ownerId: string;
   _count?: { songs: number };
 }
 
