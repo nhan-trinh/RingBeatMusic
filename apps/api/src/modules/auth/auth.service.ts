@@ -52,8 +52,8 @@ export const AuthService = {
     const otp = OtpUtil.generateNumeric();
     await redis.set(`${OTP_PREFIX}${email}`, otp, 'EX', 10 * 60);
 
-    // Gửi email thật qua Nodemailer
-    await MailUtil.sendOTP(email, otp, 'Đăng Ký');
+    // Gửi email thật qua Nodemailer ngầm trong background (Fire-and-forget)
+    MailUtil.sendOTP(email, otp, 'Đăng Ký').catch(err => console.error('[Mail Error]', err));
 
     return { message: 'Vui lòng kiểm tra email để xác thực tài khoản' };
   },
@@ -252,7 +252,8 @@ export const AuthService = {
     const otp = OtpUtil.generateNumeric();
     await redis.set(`${OTP_PREFIX}pwd_${email}`, otp, 'EX', 10 * 60);
 
-    await MailUtil.sendOTP(email, otp, 'Quên Mật Khẩu');
+    // Gửi mail ngầm
+    MailUtil.sendOTP(email, otp, 'Quên Mật Khẩu').catch(err => console.error('[Mail Error]', err));
 
     return { message: 'Yêu cầu thành công. Vui lòng kiểm tra mã OTP.' };
   },
