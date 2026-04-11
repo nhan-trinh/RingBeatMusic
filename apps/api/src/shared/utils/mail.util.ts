@@ -1,51 +1,34 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { env } from '../config/env';
 
 class MailUtility {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(env.SMTP_PORT) === 587 ? 587 : 465,
-      secure: Number(env.SMTP_PORT) !== 587, // true nếu dùng cổng 465 (chuẩn HTTPS Cloud)
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      // Trick quan trọng: Ép Render sử dụng IPv4 thuần thay vì bị IPv6 của Google block đường biên
-      family: 4 
-    } as any);
+    this.resend = new Resend(env.RESEND_API_KEY);
   }
 
   /**
-   * Gửi Email
-   * @param to Địa chỉ nhận
-   * @param subject Tiêu đề Email
-   * @param text Nội dung thuần (Fallback)
-   * @param html Nội dung HTML
+   * Gửi Email bằng Resend
    */
   async sendEmail(to: string, subject: string, text: string, html?: string): Promise<boolean> {
     try {
-      console.log(`[MailUtil] BẮT ĐẦU xử lý gửi Email tới > ${to}`);
+      console.log(`[MailUtil] BẮT ĐẦU xử lý gửi Email tới > ${to} qua máy chủ Resend...`);
       
-      if (!env.SMTP_USER || !env.SMTP_PASS) {
-        console.warn(`[MailUtil] THẤT BẠI: Không có config SMTP_USER hay SMTP_PASS trên Render!`);
-        return false;
-      }
-
-      const info = await this.transporter.sendMail({
+      const { data, error } = await this.resend.emails.send({
         from: `"RingBeat Music" <${env.EMAIL_FROM}>`,
-        to,
+        to: [to],
         subject,
         text,
         html: html || text,
       });
 
-      console.log(`[MailUtil] THÀNH CÔNG! Email đã bay tới ${to}. ID: ${info.messageId}`);
+      if (error) {
+         console.error(`[MailUtil] Resend API trả về lỗi:`, error);
+         return false;
+      }
+
+      console.log(`[MailUtil] THÀNH CÔNG! Email đã bay tới ${to}. ID: ${data?.id}`);
       return true;
     } catch (error) {
       console.error(`[MailUtil] LỖI CỰC ĐỘ khi gửi tới ${to}:`, error);
@@ -58,7 +41,7 @@ class MailUtility {
    */
   async sendOTP(email: string, otp: string, context: 'Đăng Ký' | 'Quên Mật Khẩu' = 'Đăng Ký'): Promise<boolean> {
     const subject = `[RingBeat Music] Mã OTP ${context}`;
-    const text = `Mã OTP của bạn là: ${otp}. Vui lòng không chia sẻ mã này cho bất kỳ ai. Mã có hiệu lực 10 phút.`;
+    const text = `Mã OTP của bạn là: ${otp}. Vui lòng không chia sẻ mã này. Mã có hiệu lực 10 phút.`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
         <h2 style="color: #1DB954; text-align: center;">RingBeat Music</h2>
