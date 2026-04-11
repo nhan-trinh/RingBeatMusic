@@ -8,11 +8,13 @@ import { env } from '../../shared/config/env';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { TokenUtil } from '../../shared/utils/token.util';
 import { OtpUtil } from '../../shared/utils/otp.util';
+import { MailUtil } from '../../shared/utils/mail.util';
 
 const LOGIN_ATTEMPTS_PREFIX = 'login_attempts:';
 const OTP_PREFIX = 'otp:';
 const BLACKLIST_PREFIX = 'blacklist:';
 const REFRESH_PREFIX = 'refresh_token:';
+const PENDING_USER_PREFIX = 'pending_user:';
 
 export const AuthService = {
   checkEmail: async (email: string) => {
@@ -26,27 +28,32 @@ export const AuthService = {
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      throw new AppError('Email đã được đăng ký', 400, ErrorCodes.ALREADY_EXISTS);
+      if (!existingUser.isEmailVerified) {
+        // Dọn dẹp tài khoản rác chưa kích hoạt từ phiên bản cũ (nếu có)
+        await prisma.user.delete({ where: { email } });
+      } else {
+        throw new AppError('Email đã được đăng ký', 400, ErrorCodes.ALREADY_EXISTS);
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-        dateOfBirth: new Date(dateOfBirth),
-        gender,
-        isEmailVerified: false,
-      },
-    });
+    const pendingUser = {
+      email,
+      passwordHash,
+      name,
+      dateOfBirth: new Date(dateOfBirth).toISOString(),
+      gender,
+    };
+
+    // Lưu vào Redis (10 phút) thay vì phi thẳng vào DB PostgreSQL gây rác
+    await redis.set(`${PENDING_USER_PREFIX}${email}`, JSON.stringify(pendingUser), 'EX', 10 * 60);
 
     const otp = OtpUtil.generateNumeric();
     await redis.set(`${OTP_PREFIX}${email}`, otp, 'EX', 10 * 60);
 
-    // TODO: Queue email Worker
-    console.log(`[DEV MODE] OTP cho ${email}: ${otp}`);
+    // Gửi email thật qua Nodemailer
+    await MailUtil.sendOTP(email, otp, 'Đăng Ký');
 
     return { message: 'Vui lòng kiểm tra email để xác thực tài khoản' };
   },
@@ -58,10 +65,38 @@ export const AuthService = {
       throw new AppError('Mã OTP không hợp lệ hoặc đã hết hạn', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
-    const user = await prisma.user.update({
-      where: { email },
-      data: { isEmailVerified: true },
-    });
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Đọc User Đang Chờ từ Redis
+      const pendingUserStr = await redis.get(`${PENDING_USER_PREFIX}${email}`);
+      if (!pendingUserStr) {
+        throw new AppError('Dữ liệu đăng ký đã hết hạn. Vui lòng đăng ký lại.', 400, ErrorCodes.VALIDATION_ERROR);
+      }
+      
+      const pendingUser = JSON.parse(pendingUserStr);
+      
+      // Tạo User vào DB chính thức
+      user = await prisma.user.create({
+        data: {
+          email: pendingUser.email,
+          passwordHash: pendingUser.passwordHash,
+          name: pendingUser.name,
+          dateOfBirth: new Date(pendingUser.dateOfBirth),
+          gender: pendingUser.gender,
+          isEmailVerified: true,
+        },
+      });
+
+      // Cleanup
+      await redis.del(`${PENDING_USER_PREFIX}${email}`);
+    } else {
+      // Dành cho trường hợp hiếm nếu user đã bị tạo rác từ trước khi Refactor
+      user = await prisma.user.update({
+        where: { email },
+        data: { isEmailVerified: true },
+      });
+    }
 
     await redis.del(`${OTP_PREFIX}${email}`);
     const tokens = TokenUtil.generateTokens(user.id, user.role);
@@ -217,7 +252,7 @@ export const AuthService = {
     const otp = OtpUtil.generateNumeric();
     await redis.set(`${OTP_PREFIX}pwd_${email}`, otp, 'EX', 10 * 60);
 
-    console.log(`[DEV MODE] Quên mật khẩu OTP cho ${email}: ${otp}`);
+    await MailUtil.sendOTP(email, otp, 'Quên Mật Khẩu');
 
     return { message: 'Yêu cầu thành công. Vui lòng kiểm tra mã OTP.' };
   },
