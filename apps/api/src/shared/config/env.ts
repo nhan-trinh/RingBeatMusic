@@ -26,8 +26,11 @@ const envSchema = z.object({
   MEILI_MASTER_KEY: z.string().min(1, 'MEILI_MASTER_KEY là bắt buộc'),
 
   // Email
-  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY là bắt buộc'),
-  EMAIL_FROM: z.string().default('onboarding@resend.dev'),
+  SMTP_HOST: z.string().min(1, 'SMTP_HOST là bắt buộc'),
+  SMTP_PORT: z.string().default('465'),
+  SMTP_USER: z.string().min(1, 'SMTP_USER là bắt buộc'),
+  SMTP_PASS: z.string().min(1, 'SMTP_PASS là bắt buộc'),
+  EMAIL_FROM: z.string().default('noreply@ringbeat.com'),
 
   // VNPAY
   VNPAY_TMN_CODE: z.string().optional(),
