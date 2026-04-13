@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import { queryClient } from '../../lib/query-client';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -13,9 +15,7 @@ import { PlaylistContextMenu, usePlaylistContextMenu } from '../../components/sh
 
 export const PlaylistPage = () => {
   const { id } = useParams();
-  const [playlist, setPlaylist] = useState<any>(null);
   const [dominantColor, setDominantColor] = useState('#121212');
-  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ title: '', description: '', coverUrl: '' });
   const [saving, setSaving] = useState(false);
@@ -28,38 +28,37 @@ export const PlaylistPage = () => {
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
   const { menu: playlistMenu, openPlaylistMenu, closePlaylistMenu } = usePlaylistContextMenu();
 
-  useEffect(() => {
-    const fetchPlaylist = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/playlists/${id}`) as any;
-        setPlaylist(res.data);
-        setEditForm({
-          title: res.data.title || '',
-          description: res.data.description || '',
-          coverUrl: res.data.coverUrl || '',
-        });
+  const { data: playlist, isLoading: loading } = useQuery({
+    queryKey: ['playlist', id],
+    queryFn: async () => {
+      const res = await api.get(`/playlists/${id}`) as any;
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
-        if (res.data?.coverUrl) {
-          const fac = new FastAverageColor();
-          const img = new Image();
-          img.crossOrigin = 'Anonymous';
-          img.src = res.data.coverUrl;
-          img.onload = () => {
-            try {
-              const color = fac.getColor(img);
-              setDominantColor(color.hex);
-            } catch (e) { } finally { fac.destroy(); }
-          };
-        }
-      } catch (error) {
-        console.error('Lỗi khi fetch playlist:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPlaylist();
-  }, [id]);
+  useEffect(() => {
+    if (!playlist) return;
+
+    setEditForm({
+      title: playlist.title || '',
+      description: playlist.description || '',
+      coverUrl: playlist.coverUrl || '',
+    });
+
+    if (playlist.coverUrl) {
+      const fac = new FastAverageColor();
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = playlist.coverUrl + (playlist.coverUrl.includes('?') ? '&' : '?') + 'corsbuster=' + Date.now();
+      img.onload = () => {
+        try {
+          const color = fac.getColor(img);
+          setDominantColor(color.hex);
+        } catch (e) { } finally { fac.destroy(); }
+      };
+    }
+  }, [playlist]);
 
   if (loading) {
     return (
@@ -133,7 +132,8 @@ export const PlaylistPage = () => {
     setSaving(true);
     try {
       await api.patch(`/playlists/${id}`, editForm);
-      setPlaylist({ ...playlist, ...editForm });
+      // Xóa cache để Reload data mới nhất
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
       setIsEditing(false);
     } catch (e) {
       console.error('Failed to update playlist:', e);
@@ -154,7 +154,7 @@ export const PlaylistPage = () => {
       }) as any;
       const newUrl = res.data.coverUrl;
       setEditForm((prev: any) => ({ ...prev, coverUrl: newUrl }));
-      setPlaylist((prev: any) => ({ ...prev, coverUrl: newUrl }));
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
     } catch (e) {
       console.error('Failed to upload cover:', e);
     } finally {

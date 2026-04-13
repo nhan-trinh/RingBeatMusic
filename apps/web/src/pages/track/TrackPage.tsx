@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
@@ -11,9 +12,7 @@ import { parseLRC, SyncedLyricLine } from '../../lib/lrc-parser';
 export const TrackPage = () => {
   const { id } = useParams();
 
-  const [song, setSong] = useState<any>(null);
-  const [dominantColor, setDominantColor] = useState('#1db954');
-  const [loading, setLoading] = useState(true);
+  const [dominantColor, setDominantColor] = useState('#121212');
   const [parsedLyrics, setParsedLyrics] = useState<SyncedLyricLine[]>([]);
 
   const { setQueueAndPlay, currentTrack, isPlaying, togglePlay, progress } = usePlayerStore();
@@ -22,42 +21,41 @@ export const TrackPage = () => {
   const activeLyricRef = useRef<HTMLParagraphElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
 
+  // Hook Luyện lấy dữ liệu từ React Query (Đã bật Cache Level 2)
+  const { data: song, isLoading: loading } = useQuery({
+    queryKey: ['track', id],
+    queryFn: async () => {
+      const res = await api.get(`/songs/${id}`) as any;
+      return res.data;
+    }
+  });
+
+  // Hậu xử lý (Extract color & Parse lyrics) sau khi có data từ Cache hoặc Mạng
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/songs/${id}`) as any;
-        const songData = res.data;
-        setSong(songData);
+    if (!song) return;
 
-        // Parse LRC từ trường lyrics
-        if (songData.lyrics) {
-          const lines = parseLRC(songData.lyrics);
-          setParsedLyrics(lines);
-        } else {
-          setParsedLyrics([]);
-        }
+    if (song.lyrics) {
+      setParsedLyrics(parseLRC(song.lyrics));
+    } else {
+      setParsedLyrics([]);
+    }
 
-        if (songData.coverUrl) {
-          const fac = new FastAverageColor();
-          const img = new Image();
-          img.crossOrigin = 'Anonymous';
-          img.src = songData.coverUrl;
-          img.onload = () => {
-            try {
-              const color = fac.getColor(img);
-              setDominantColor(color.hex);
-            } catch (e) { } finally { fac.destroy(); }
-          };
-        }
-      } catch (error) {
-        console.error('Lỗi khi fetch track info:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
+    if (song.coverUrl) {
+      const fac = new FastAverageColor();
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      // Thêm cache buster để lấy CORS header xịn, tránh Tainted Canvas do browser cache
+      img.src = song.coverUrl + (song.coverUrl.includes('?') ? '&' : '?') + 'corsbuster=' + Date.now();
+      img.onload = () => {
+        try {
+          const color = fac.getColor(img);
+          setDominantColor(color.hex);
+        } catch (e) {
+          console.error('Lỗi khi phân tích màu:', e);
+        } finally { fac.destroy(); }
+      };
+    }
+  }, [song]);
 
   const isCurrentPlaying = currentTrack?.id === song?.id;
   const isVinylSpinning = isCurrentPlaying && isPlaying;
@@ -141,6 +139,12 @@ export const TrackPage = () => {
 
       {/* Nút quay lại cực chất, bồng bềnh góc trái */}
 
+
+      {/* Bản giao hưởng Màu Sắc - Global Background Tracking (Apple/Spotify Style) */}
+      <div 
+        className="absolute inset-x-0 top-0 h-[600px] md:h-[900px] -z-20 transition-colors duration-1000 pointer-events-none"
+        style={{ background: `linear-gradient(to bottom, ${dominantColor}cc, ${dominantColor}20, #0e0e0e)` }}
+      />
 
       {/* Lớp hạt mờ nhẹ toàn trang để giữ chất liệu Dark Theme */}
       <div className="absolute inset-0 -z-10 bg-[#0e0e0e]/50 pointer-events-none mix-blend-overlay"></div>

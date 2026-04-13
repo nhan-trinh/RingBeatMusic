@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { MediaCard } from '../../components/shared/MediaCard';
 import { RecentCard } from '../../components/shared/RecentCard';
@@ -7,38 +8,38 @@ import { FastAverageColor } from 'fast-average-color';
 import { Link } from 'react-router-dom';
 
 export const HomePage = () => {
-  const [feedData, setFeedData] = useState<any>(null);
   const [dominantColor, setDominantColor] = useState('#121212');
 
-  useEffect(() => {
-    const fetchFeed = async () => {
-      try {
-        const res = await api.get('/home/feed') as any;
-        setFeedData(res.data);
+  // Luyện data trang chủ bằng React Query (Cache vô hạn siêu bám dính)
+  const { data: feedData } = useQuery({
+    queryKey: ['homeFeed'],
+    queryFn: async () => {
+      const res = await api.get('/home/feed') as any;
+      return res.data;
+    }
+  });
 
-        // Phát hiện màu từ ảnh đầu tiên
-        if (res.data?.recentlyPlayed?.[0]?.coverUrl) {
-          const fac = new FastAverageColor();
-          const img = new Image();
-          img.crossOrigin = 'Anonymous'; // Bắt buộc cho CORS
-          img.src = res.data.recentlyPlayed[0].coverUrl;
-          img.onload = () => {
-            try {
-              const color = fac.getColor(img);
-              setDominantColor(color.hex);
-            } catch (err) {
-              console.log('Không thể lấy màu do CORS', err);
-            } finally {
-              fac.destroy();
-            }
-          };
+  useEffect(() => {
+    if (!feedData) return;
+    
+    // Phát hiện màu từ ảnh đầu tiên
+    if (feedData?.recentlyPlayed?.[0]?.coverUrl) {
+      const fac = new FastAverageColor();
+      const img = new Image();
+      img.crossOrigin = 'Anonymous'; // Bắt buộc cho CORS
+      img.src = feedData.recentlyPlayed[0].coverUrl + (feedData.recentlyPlayed[0].coverUrl.includes('?') ? '&' : '?') + 'corsbuster=' + Date.now();
+      img.onload = () => {
+        try {
+          const color = fac.getColor(img);
+          setDominantColor(color.hex);
+        } catch (err) {
+          console.log('Không thể lấy màu do CORS', err);
+        } finally {
+          fac.destroy();
         }
-      } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu HomePage', error);
-      }
-    };
-    fetchFeed();
-  }, []);
+      };
+    }
+  }, [feedData]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();

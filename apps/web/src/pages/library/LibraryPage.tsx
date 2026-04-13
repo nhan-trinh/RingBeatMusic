@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Play, Heart, Music2, Clock } from 'lucide-react';
 import { api } from '../../lib/api';
@@ -36,28 +37,19 @@ const formatDuration = (seconds: number) => {
 
 export const LibraryPage = () => {
   const [activeTab, setActiveTab] = useState<'songs' | 'artists' | 'albums'>('songs');
-  const [library, setLibrary] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
   const { setQueueAndPlay, currentTrack, isPlaying, togglePlay, currentContextId } = usePlayerStore();
   const { isLiked, toggleLike, libraryVersion } = useLibraryStore();
   const { menu, openMenu, closeMenu } = useContextMenu();
 
-  // Re-fetch sau khi API hoàn thành (libraryVersion++ trigger effect này)
-  useEffect(() => {
-    const fetchLibrary = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get('/users/library') as any;
-        setLibrary(res.data);
-      } catch (err) {
-        console.error('Lỗi khi lấy thư viện:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLibrary();
-  }, [libraryVersion]); // 👈 Chỉ re-fetch khi libraryVersion báo hiệu API đã xử lý xong
+  // Re-fetch thần tốc với React Query cache. 
+  // Biến libraryVersion được nhúng thẳng vào queryKey, hễ thay đổi là auto kéo mạng lại mượt mà.
+  const { data: library, isLoading: loading } = useQuery({
+    queryKey: ['library', libraryVersion],
+    queryFn: async () => {
+      const res = await api.get('/users/library') as any;
+      return res.data;
+    }
+  });
 
   const LIBRARY_CONTEXT_ID = 'liked-songs-library';
 

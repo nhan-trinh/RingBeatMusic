@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { MediaCard } from '../../components/shared/MediaCard';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 export const SectionPage = () => {
   const { id } = useParams();
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data = [], isLoading: loading } = useQuery({
+    queryKey: ['section', id],
+    queryFn: async () => {
+      const res = await api.get(`/search?q=${id}`) as any;
+      return res.data.songs || res.data.playlists || res.data.albums || [];
+    },
+    enabled: !!id,
+  });
 
   const getTitle = () => {
     switch (id) {
@@ -19,23 +25,6 @@ export const SectionPage = () => {
       default: return 'Khám phá';
     }
   };
-
-  useEffect(() => {
-    const fetchSectionData = async () => {
-      setLoading(true);
-      try {
-        // Sử dụng endpoint search với từ khoá đặc biệt hoặc endpoint riêng nếu có
-        const res = await api.get(`/search?q=${id}`) as any;
-        setData(res.data.songs || res.data.playlists || res.data.albums || []);
-      } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu section:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSectionData();
-  }, [id]);
 
   return (
     <div className="p-6 pt-24 min-h-full w-full max-w-screen-2xl mx-auto text-white">

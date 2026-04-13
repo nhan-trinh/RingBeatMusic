@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
@@ -10,41 +11,36 @@ import { formatTime, cn } from '../../lib/utils';
 
 export const ArtistPage = () => {
   const { id } = useParams();
-  const [artist, setArtist] = useState<any>(null);
   const [dominantColor, setDominantColor] = useState('#121212');
-  const [loading, setLoading] = useState(true);
+
+  const { data: artist, isLoading: loading } = useQuery({
+    queryKey: ['artist', id],
+    queryFn: async () => {
+      const res = await api.get(`/artists/${id}`) as any;
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
   const { setQueueAndPlay, currentContextId, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isFollowing, toggleFollow, isLiked, toggleLike } = useLibraryStore();
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
 
   useEffect(() => {
-    const fetchArtist = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/artists/${id}`) as any;
-        setArtist(res.data);
-
-        if (res.data?.avatarUrl) {
-          const fac = new FastAverageColor();
-          const img = new Image();
-          img.crossOrigin = 'Anonymous';
-          img.src = res.data.avatarUrl;
-          img.onload = () => {
-            try {
-              const color = fac.getColor(img);
-              setDominantColor(color.hex);
-            } catch (e) { } finally { fac.destroy(); }
-          };
-        }
-      } catch (error) {
-        console.error('Lỗi khi fetch artist:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchArtist();
-  }, [id]);
+    if (!artist) return;
+    if (artist.avatarUrl) {
+      const fac = new FastAverageColor();
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = artist.avatarUrl + (artist.avatarUrl.includes('?') ? '&' : '?') + 'corsbuster=' + Date.now();
+      img.onload = () => {
+        try {
+          const color = fac.getColor(img);
+          setDominantColor(color.hex);
+        } catch (e) { } finally { fac.destroy(); }
+      };
+    }
+  }, [artist]);
 
   if (loading) {
     return (

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { MediaCard } from '../../components/shared/MediaCard';
 
@@ -19,29 +19,16 @@ const BROWSE_CATEGORIES = [
 export const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q');
-  const [results, setResults] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!query) {
-      setResults(null);
-      return;
-    }
-
-    const fetchResults = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/search?q=${encodeURIComponent(query)}`) as any;
-        setResults(res.data);
-      } catch (error) {
-        console.error('Lỗi khi fetch search:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchResults();
-  }, [query]);
+  // Luyện lấy dữ liệu tìm kiếm siêu tốc vô tiền khoáng hậu với React Query cache
+  const { data: results, isLoading: loading } = useQuery({
+    queryKey: ['search', query],
+    queryFn: async () => {
+      const res = await api.get(`/search?q=${encodeURIComponent(query!)}`) as any;
+      return res.data;
+    },
+    enabled: !!query, // Chỉ chạy Fetch nếu user đã nhập query
+  });
 
   // Giao diện khi chưa gõ tìm kiếm
   if (!query) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
@@ -40,9 +41,16 @@ const AlbumSkeleton = () => (
 
 export const AlbumPage = () => {
   const { id } = useParams();
-  const [album, setAlbum] = useState<any>(null);
   const [dominantColor, setDominantColor] = useState('#121212');
-  const [loading, setLoading] = useState(true);
+
+  const { data: album, isLoading: loading } = useQuery({
+    queryKey: ['album', id],
+    queryFn: async () => {
+      const res = await api.get(`/albums/${id}`) as any;
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
   const { setQueueAndPlay, currentContextId, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isLiked, toggleLike, isFollowingAlbum, toggleFollowAlbum } = useLibraryStore();
@@ -50,30 +58,19 @@ export const AlbumPage = () => {
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
 
   useEffect(() => {
-    const fetchAlbum = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/albums/${id}`) as any;
-        setAlbum(res.data);
+    if (!album) return;
 
-        if (res.data?.coverUrl) {
-          const fac = new FastAverageColor();
-          const img = new Image();
-          img.crossOrigin = 'Anonymous';
-          img.src = res.data.coverUrl;
-          img.onload = () => {
-            try { const color = fac.getColor(img); setDominantColor(color.hex); }
-            catch { } finally { fac.destroy(); }
-          };
-        }
-      } catch (error) {
-        console.error('Lỗi khi fetch album:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAlbum();
-  }, [id]);
+    if (album.coverUrl) {
+      const fac = new FastAverageColor();
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = album.coverUrl + (album.coverUrl.includes('?') ? '&' : '?') + 'corsbuster=' + Date.now();
+      img.onload = () => {
+        try { const color = fac.getColor(img); setDominantColor(color.hex); }
+        catch { } finally { fac.destroy(); }
+      };
+    }
+  }, [album]);
 
   if (loading) return <AlbumSkeleton />;
 
