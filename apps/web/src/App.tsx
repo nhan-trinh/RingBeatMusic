@@ -33,20 +33,51 @@ import { AccountSettingsPage } from './pages/settings/AccountSettingsPage';
 import { SectionPage } from './pages/section/SectionPage';
 import { useLibraryStore } from './stores/library.store';
 import { useAuthStore } from './stores/auth.store';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 // Màn hình full không có Sidebar (cho Login/Register)
 
 // Màn hình full không có Sidebar (cho Login/Register)
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, accessToken, setTokens, logout } = useAuthStore();
   const { hydrate, isHydrated } = useLibraryStore();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated && !isHydrated) {
+    const initAuth = async () => {
+      if (isAuthenticated && !accessToken) {
+        try {
+          const res = await axios.post(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'}/auth/refresh`,
+            {},
+            { withCredentials: true }
+          );
+          if (res.data?.success) {
+            setTokens(res.data.data.accessToken);
+          }
+        } catch (err) {
+          logout();
+        }
+      }
+      setIsCheckingAuth(false);
+    };
+    initAuth();
+  }, [isAuthenticated, accessToken, setTokens, logout]);
+
+  useEffect(() => {
+    if (isAuthenticated && accessToken && !isHydrated) {
       hydrate();
     }
-  }, [isAuthenticated, isHydrated, hydrate]);
+  }, [isAuthenticated, accessToken, isHydrated, hydrate]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#121212] text-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1ed760] border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

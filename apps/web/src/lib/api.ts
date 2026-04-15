@@ -73,18 +73,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
-
         // Gọi API cấp token mới băng axios cơ bản (để khỏi lặp interceptor cũ)
+        // Lưu ý: Không gửi body vì server sẽ đọc Refresh Token từ HttpOnly Cookie
         const refreshResponse = await axios.post(
           `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'}/auth/refresh`,
-          { refreshToken }
+          {},
+          { withCredentials: true }
         );
 
-        const { accessToken, refreshToken: newRefresh } = refreshResponse.data.data;
+        const { accessToken } = refreshResponse.data.data;
 
-        useAuthStore.getState().setTokens(accessToken, newRefresh);
+        useAuthStore.getState().setTokens(accessToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
         processQueue(null, accessToken);

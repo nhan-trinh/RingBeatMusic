@@ -17,10 +17,11 @@ interface AuthState {
   isAuthenticated: boolean;
   
   // Actions
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setAuth: (user: User, accessToken: string) => void;
+  setTokens: (accessToken: string) => void;
   updateUser: (user: Partial<User>) => void;
   logout: () => void;
+  setAuthenticated: (status: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -30,14 +31,12 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
 
-      setAuth: (user, accessToken, refreshToken) => {
-        localStorage.setItem('refreshToken', refreshToken);
+      setAuth: (user, accessToken) => {
         set({ user, accessToken, isAuthenticated: true });
       },
 
-      setTokens: (accessToken, refreshToken) => {
-        localStorage.setItem('refreshToken', refreshToken);
-        set({ accessToken });
+      setTokens: (accessToken) => {
+        set({ accessToken, isAuthenticated: true });
       },
 
       updateUser: (update) => set((state) => ({
@@ -45,17 +44,17 @@ export const useAuthStore = create<AuthState>()(
       })),
 
       logout: () => {
-        localStorage.removeItem('refreshToken');
         set({ user: null, accessToken: null, isAuthenticated: false });
-        // Sẽ gọi API logout xoá Redis sau
       },
+
+      setAuthenticated: (status) => set({ isAuthenticated: status }),
     }),
     {
       name: 'auth-storage',
-      // Chỉ lưu accessToken và thông tin user sơ bộ vào storage. Refresh Token chạy ngầm qua localStorage
+      // CHỈ lưu thông tin user. Access Token lưu trong bộ nhớ (In-memory)
+      // Refresh Token do trình duyệt tự quản lý qua HttpOnly Cookie.
       partialize: (state) => ({ 
         user: state.user, 
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated 
       }),
       storage: createJSONStorage(() => localStorage),

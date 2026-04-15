@@ -9,13 +9,12 @@ export const AuthCallbackPage = () => {
 
   useEffect(() => {
     const accessToken = searchParams.get('accessToken');
-    const refreshToken = searchParams.get('refreshToken');
     const userStr = searchParams.get('user');
 
-    if (accessToken && refreshToken && userStr) {
+    if (accessToken && userStr) {
       try {
         const user = JSON.parse(userStr);
-        setAuth(user, accessToken, refreshToken);
+        setAuth(user, accessToken);
         navigate('/', { replace: true });
       } catch (err) {
         navigate('/login?error=JSONParseError', { replace: true });

@@ -3,6 +3,7 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { env } from './shared/config/env';
 import { errorMiddleware } from './shared/middleware/error.middleware';
 import { optionalAuthMiddleware } from './shared/middleware/auth.middleware';
@@ -24,9 +25,12 @@ import { moderationRouter } from './modules/moderation/moderation.router';
 import { adminRouter } from './modules/admin/admin.router';
 import { homeRouter } from './modules/home/home.router';
 
+
 export const createApp = (): Application => {
   const app = express();
-  
+
+  app.use(cookieParser());
+
   // Quan trọng cho Deploy: Render dùng reverse proxy, cần bật trust proxy để nhận diện đúng https
   app.set('trust proxy', 1);
 

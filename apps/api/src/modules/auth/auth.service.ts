@@ -178,6 +178,9 @@ export const AuthService = {
 
   // 5. Refresh Setup
   refresh: async (refreshToken: string) => {
+    if (!refreshToken) {
+      throw new AppError('Không tìm thấy Refresh Token', 401, ErrorCodes.TOKEN_INVALID);
+    }
     const payload = TokenUtil.verifyRefreshToken(refreshToken);
 
     if (payload.jti) {
