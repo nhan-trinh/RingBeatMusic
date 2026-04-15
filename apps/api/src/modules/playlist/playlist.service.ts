@@ -29,7 +29,8 @@ export const PlaylistService = {
       where: {
         OR: [
           { ownerId: userId },
-          { collaborators: { some: { userId } } }
+          { collaborators: { some: { userId } } },
+          { followedBy: { some: { userId } } }
         ]
       },
       orderBy: { updatedAt: 'desc' }

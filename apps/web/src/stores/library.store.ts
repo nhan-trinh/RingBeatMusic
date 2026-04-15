@@ -172,6 +172,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       if (wasFollowing) { await api.delete(`/playlists/${playlistId}/follow`); }
       else { await api.post(`/playlists/${playlistId}/follow`); }
       set({ libraryVersion: process.env.NODE_ENV !== 'test' ? get().libraryVersion + 1 : 0 });
+      // Cập nhật lại danh sách playlists để hiện ở sidebar ngay lập tức
+      await get().fetchPlaylists();
+      queryClient.invalidateQueries({ queryKey: ['homeFeed'] });
     } catch {
       set({ followedPlaylistIds });
       toast.error('Có lỗi xảy ra.');
