@@ -8,7 +8,7 @@ import {
   addSongSchema, 
   reorderSongsSchema 
 } from './playlist.schema';
-
+import { uploadImage } from '../../shared/middleware/upload.middleware';
 export const playlistRouter = Router();
 
 // GET /:id dùng optionalAuth – public playlist trợ được, private chỉ được nếu owner
@@ -22,6 +22,7 @@ playlistRouter.post('/', validateRequest(createPlaylistSchema), playlistControll
 playlistRouter.post('/hide-song', playlistController.hideSong); // Phải đặt trên :id để ko bị bắt nhầm tham số
 
 playlistRouter.patch('/:id', validateRequest(updatePlaylistSchema), playlistController.update);
+playlistRouter.patch('/:id/cover', uploadImage.single('cover'), playlistController.uploadCover);
 playlistRouter.delete('/:id', playlistController.delete);
 
 // Cập nhật quan hệ bài hát và playlist

@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { PlaylistContextMenu, usePlaylistContextMenu } from '../shared/PlaylistContextMenu';
+import { RenamePlaylistModal } from '../shared/RenamePlaylistModal';
 
 export const Sidebar = ({ className }: { className?: string }) => {
   const location = useLocation();
@@ -14,12 +15,16 @@ export const Sidebar = ({ className }: { className?: string }) => {
   const { isAuthenticated, user } = useAuthStore();
   const {
     isHydrated, libraryVersion, playlists,
-    createPlaylist, updatePlaylist,
+    createPlaylist,
   } = useLibraryStore();
   const [likedSongs, setLikedSongs] = useState<any[]>([]);
   const [followedArtists, setFollowedArtists] = useState<any[]>([]);
   const [creating, setCreating] = useState(false);
   const { menu, openPlaylistMenu, closePlaylistMenu } = usePlaylistContextMenu();
+  const [renameModal, setRenameModal] = useState<{ isOpen: boolean; playlist: any }>({
+    isOpen: false,
+    playlist: null,
+  });
 
   const isArtist = user?.role === 'ARTIST';
   const isAdmin = user?.role === 'ADMIN';
@@ -44,11 +49,8 @@ export const Sidebar = ({ className }: { className?: string }) => {
     if (playlist) navigate(`/playlist/${playlist.id}`);
   };
 
-  const handleRenamePlaylist = async (playlist: any) => {
-    const newTitle = prompt('Nhập tên mới cho playlist:', playlist.title);
-    if (newTitle && newTitle.trim() && newTitle !== playlist.title) {
-      await updatePlaylist(playlist.id, { title: newTitle.trim() });
-    }
+  const handleRenamePlaylist = (playlist: any) => {
+    setRenameModal({ isOpen: true, playlist });
   };
 
   const navItems = [
@@ -216,6 +218,15 @@ export const Sidebar = ({ className }: { className?: string }) => {
           position={menu.position}
           onClose={closePlaylistMenu}
           onRename={() => handleRenamePlaylist(menu.playlist)}
+        />
+      )}
+
+      {renameModal.isOpen && renameModal.playlist && (
+        <RenamePlaylistModal 
+          isOpen={renameModal.isOpen}
+          playlistId={renameModal.playlist.id}
+          initialTitle={renameModal.playlist.title}
+          onClose={() => setRenameModal({ isOpen: false, playlist: null })}
         />
       )}
     </nav>
