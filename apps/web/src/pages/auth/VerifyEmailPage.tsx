@@ -22,8 +22,8 @@ export const VerifyEmailPage = () => {
     },
     onSuccess: (res) => {
       if (res.success && res.data) {
-        const { user, accessToken, refreshToken } = res.data;
-        setAuth(user, accessToken, refreshToken);
+        const { user, accessToken } = res.data;
+        setAuth(user, accessToken);
         navigate('/');
       }
     },
