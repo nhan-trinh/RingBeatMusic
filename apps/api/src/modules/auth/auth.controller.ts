@@ -81,7 +81,7 @@ export const authController = {
     // Note: To display email in authenticator app, typically email is fetched or passed. 
     // We pass role/id as placeholder if email isn't in req.user, or fetch from DB in service.
     // I will refactor setup2FA to just take userId and fetch email inside.
-    const result = await AuthService.setup2FA(user.id, 'UserEmail'); 
+    const result = await AuthService.setup2FA(user.id, 'UserEmail');
     sendSuccess(res, result, 'Thiết lập 2FA thành công');
   }),
   verify2FA: catchAsync(async (req: Request, res: Response) => {
@@ -104,7 +104,7 @@ export const authController = {
   googleCallback: catchAsync(async (req: Request, res: Response) => {
     const { code } = req.query;
     if (!code) return res.redirect(`${process.env.FRONTEND_URL}/login?error=Google_Canceled`);
-    
+
     const { env } = require('../../shared/config/env');
     const { OAuth2Client } = require('google-auth-library');
     const { prisma } = require('../../shared/config/database');

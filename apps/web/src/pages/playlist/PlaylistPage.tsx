@@ -23,7 +23,7 @@ export const PlaylistPage = () => {
 
   const { user } = useAuthStore();
   const { setQueueAndPlay, currentContextId, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { isLiked, toggleLike, isFollowingPlaylist, toggleFollowPlaylist } = useLibraryStore();
+  const { isLiked, toggleLike, isFollowingPlaylist, toggleFollowPlaylist, removeSongFromPlaylist } = useLibraryStore();
   const playlistFollowed = id ? isFollowingPlaylist(id) : false;
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
   const { menu: playlistMenu, openPlaylistMenu, closePlaylistMenu } = usePlaylistContextMenu();
@@ -163,6 +163,19 @@ export const PlaylistPage = () => {
   };
 
   const isOwner = playlist.ownerId === user?.id;
+  const isCollaborator = playlist.collaborators?.some((c: any) => c.userId === user?.id);
+  const canManageItems = isOwner || isCollaborator;
+
+  const handleRemoveFromPlaylist = async (songId: string) => {
+    if (!id) return;
+    try {
+      await removeSongFromPlaylist(id, songId);
+      // Invalidate query để cập nhật UI ngay lập tức
+      queryClient.invalidateQueries({ queryKey: ['playlist', id] });
+    } catch (err) {
+      console.error('Failed to remove song:', err);
+    }
+  };
 
   return (
     <div className="flex-1 w-full min-h-full overflow-y-auto relative isolate text-white">
@@ -410,6 +423,7 @@ export const PlaylistPage = () => {
             const idx = playlist.songs.findIndex((s: any) => s.song.id === trackMenu.song.id);
             if (idx !== -1) handleTrackPlay(idx);
           }}
+          onRemoveFromPlaylist={canManageItems ? () => handleRemoveFromPlaylist(trackMenu.song.id) : undefined}
         />
       )}
       {playlistMenu && (
