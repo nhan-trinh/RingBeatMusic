@@ -30,6 +30,7 @@ enum SongStatus {
   APPROVED // Đã duyệt, public
   REJECTED // Bị từ chối
   ARCHIVED // Đã ẩn
+  BANNED // Bị gỡ bỏ do vi phạm
 }
 
 enum AlbumStatus {
@@ -37,6 +38,7 @@ enum AlbumStatus {
   SCHEDULED
   PUBLISHED
   ARCHIVED
+  BANNED // Bị gỡ bỏ do vi phạm
 }
 
 enum SubscriptionPlan {
@@ -124,6 +126,10 @@ model User {
   auditLogs          AuditLog[]       @relation("Actor")
   payments           Payment[]
   invoices           Invoice[]
+
+  // Social (Phase 16)
+  following UserFollow[] @relation("Following")
+  followers UserFollow[] @relation("Followers")
 }
 
 model Artist {
@@ -460,4 +466,18 @@ model SystemConfig {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// =============================================
+// Social - Friend Activity (Phase 16)
+// =============================================
+
+model UserFollow {
+  followerId  String
+  followingId String
+  follower    User     @relation("Following", fields: [followerId], references: [id])
+  following   User     @relation("Followers", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
 }

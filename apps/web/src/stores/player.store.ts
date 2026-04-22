@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Howl } from 'howler';
 import { api } from '../lib/api';
+import { socketService } from '../lib/socket';
 
 export interface Track {
   id: string;
@@ -147,19 +148,38 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
 
     sound.play();
+
+    // SOCIAL: Thông báo cho server để broadcast tới bạn bè
+    socketService.emit('player:play', {
+      songId: track.id,
+      title: track.title,
+      artistName: track.artistName,
+      coverUrl: track.coverUrl,
+      position: 0
+    });
   },
 
   pause: () => {
-    const { _howl } = get();
+    const { _howl, progress } = get();
     if (_howl) {
       _howl.pause();
+      // SOCIAL: Thông báo tạm dừng
+      socketService.emit('player:pause', { position: progress });
     }
   },
 
   resume: () => {
-    const { _howl } = get();
-    if (_howl) {
+    const { _howl, currentTrack, progress } = get();
+    if (_howl && currentTrack) {
       _howl.play();
+      // SOCIAL: Thông báo phát lại
+      socketService.emit('player:play', {
+        songId: currentTrack.id,
+        title: currentTrack.title,
+        artistName: currentTrack.artistName,
+        coverUrl: currentTrack.coverUrl,
+        position: progress
+      });
     }
   },
 

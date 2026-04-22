@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { socketAuthMiddleware } from './middleware/socket.auth';
 import { registerPlayerHandlers } from './handlers/player.handler';
+import { registerSocialHandlers } from './handlers/social.handler';
 
 let io: Server;
 
@@ -21,6 +22,7 @@ export const initSocketServer = (socketIo: Server) => {
 
     // Đăng ký các handler domain (vd: player sync)
     registerPlayerHandlers(io, socket, user);
+    registerSocialHandlers(io, socket, user);
 
     socket.on('disconnect', () => {
       console.log(`🔌 Socket disconnected: [${socket.id}]`);

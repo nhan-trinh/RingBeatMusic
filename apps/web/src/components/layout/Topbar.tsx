@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, User, Bell, LogOut, ShieldAlert, Mic2, Settings, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, Bell, LogOut, ShieldAlert, Mic2, Settings, Menu, Users } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useNotificationStore } from '../../stores/notification.store';
@@ -12,7 +12,7 @@ export const Topbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
-  const { toggleSidebar } = useUIStore();
+  const { toggleSidebar, isFriendActivityVisible, toggleFriendActivity } = useUIStore();
   const [showMenu, setShowMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -96,6 +96,18 @@ export const Topbar = () => {
           </>
         ) : (
           <div className="flex items-center gap-4">
+            {/* Friend Activity Toggle */}
+            <button 
+              onClick={toggleFriendActivity}
+              className={cn(
+                "relative flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-[#B3B3B3] hover:text-white hover:bg-black transition-all",
+                isFriendActivityVisible && "text-[#1DB954] bg-black"
+              )}
+              title="Hoạt động bạn bè"
+            >
+              <Users size={18} />
+            </button>
+
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
               <button 

@@ -17,9 +17,14 @@ userRouter.patch('/password', validateRequest(changePasswordSchema), userControl
 // Phải cấu hình Upload middleware
 userRouter.post('/avatar', uploadImage.single('avatar'), userController.uploadAvatar);
 
-// Danh mục Social (Nhạc đã thích, đang flow ai)
+// Danh mục Social (Nhạc đã thích, đang flow ai, hoạt động bạn bè)
 userRouter.get('/library', userController.getLibrary);
 userRouter.get('/history', userController.getRecentlyPlayed);
+userRouter.get('/following/activity', userController.getFollowingActivity);
+
+// Follow / Unfollow
+userRouter.post('/:id/follow', userController.followUser);
+userRouter.delete('/:id/unfollow', userController.unfollowUser);
 
 // Hồ sơ công khai
 userRouter.get('/:id', userController.getPublicProfile);

@@ -3,6 +3,7 @@ import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { v2 as cloudinary } from 'cloudinary';
 import bcrypt from 'bcryptjs';
 import { RecentlyPlayed } from '../player/player.model';
+import { NotificationService } from '../notification/notification.service';
 
 export const UserService = {
   getProfile: async (userId: string) => {
@@ -28,7 +29,7 @@ export const UserService = {
 
   updateProfile: async (userId: string, data: any) => {
     const { name, gender } = data;
-    
+
     // 1. Cập nhật User chính
     const user = await prisma.user.update({
       where: { id: userId },
@@ -139,7 +140,7 @@ export const UserService = {
     }).filter(Boolean);
   },
 
-  getPublicProfile: async (id: string) => {
+  getPublicProfile: async (id: string, currentUserId?: string) => {
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -152,12 +153,23 @@ export const UserService = {
     });
 
     if (!user) throw new AppError('Người dùng không tồn tại', 404, ErrorCodes.NOT_FOUND);
-    
+
     // 1. Thống kê Followers (Nếu là Artist)
     let followersCount = 0;
     let isVerified = false;
     let artistId = null;
     let albums: any[] = [];
+    let isFollowing = false;
+
+    // Check trạng thái follow nếu có currentUserId
+    if (currentUserId && currentUserId !== id) {
+      const follow = await (prisma as any).userFollow.findUnique({
+        where: {
+          followerId_followingId: { followerId: currentUserId, followingId: id }
+        }
+      });
+      isFollowing = !!follow;
+    }
 
     if (user.role === 'ARTIST') {
       const artist = await prisma.artist.findUnique({
@@ -170,7 +182,7 @@ export const UserService = {
         followersCount = await prisma.followedArtist.count({
           where: { artistId: artist.id }
         });
-        
+
         // Lấy danh sách album của nghệ sĩ
         albums = await prisma.album.findMany({
           where: { artistId: artist.id, status: 'PUBLISHED' },
@@ -187,10 +199,11 @@ export const UserService = {
       orderBy: { updatedAt: 'desc' }
     });
 
-    return { 
-      ...user, 
-      isVerified, 
+    return {
+      ...user,
+      isVerified,
       artistId,
+      isFollowing,
       stats: {
         followers: followersCount,
         playlists: playlists.length,
@@ -271,4 +284,93 @@ export const UserService = {
       followedPlaylistIds: followedPlaylists.map((fp: any) => fp.playlistId),
     };
   },
+
+  // Social Methods (Phase 16)
+  followUser: async (followerId: string, followingId: string) => {
+    if (followerId === followingId) throw new AppError('Bạn không thể theo dõi chính mình', 400, ErrorCodes.VALIDATION_ERROR);
+
+    const targetUser = await prisma.user.findUnique({ where: { id: followingId } });
+    if (!targetUser) throw new AppError('Người dùng không tồn tại', 404, ErrorCodes.NOT_FOUND);
+
+    // Kiểm tra xem đã follow chưa để tránh spam notify
+    const existing = await (prisma as any).userFollow.findUnique({
+      where: {
+        followerId_followingId: { followerId, followingId }
+      }
+    });
+
+    if (!existing) {
+      await (prisma as any).userFollow.create({
+        data: { followerId, followingId }
+      });
+
+      // Gửi thông báo cho người được theo dõi
+      const follower = await prisma.user.findUnique({ where: { id: followerId }, select: { name: true } });
+      if (follower) {
+        await NotificationService.createNotification(
+          followingId,
+          'SOCIAL_FOLLOW',
+          'Người theo dõi mới',
+          `${follower.name} đã bắt đầu theo dõi bạn`,
+          { followerId }
+        );
+      }
+    }
+
+    return { message: 'Đã theo dõi người dùng' };
+  },
+
+  unfollowUser: async (followerId: string, followingId: string) => {
+    await (prisma as any).userFollow.deleteMany({
+      where: { followerId, followingId }
+    });
+
+    return { message: 'Đã bỏ theo dõi người dùng' };
+  },
+
+  getFollowingActivity: async (userId: string) => {
+    const following = await (prisma as any).userFollow.findMany({
+      where: { followerId: userId },
+      select: {
+        followingId: true,
+        following: {
+          select: { id: true, name: true, avatarUrl: true, role: true }
+        }
+      }
+    });
+
+    // Lọc bỏ những người có role ARTIST (Yêu cầu Phase 16)
+    const followingUsers = following.filter((f: { following: { role: string } }) => f.following.role !== 'ARTIST');
+    const friendIds = followingUsers.map((f: { followingId: string }) => f.followingId);
+
+    // Lấy trạng thái từ Redis cho từng friend
+    const { redis } = await import('../../shared/config/redis');
+
+    const activities = await Promise.all(friendIds.map(async (friendId: string) => {
+      const stateStr = await redis.get(`player_state:${friendId}`);
+      if (!stateStr) return null;
+
+      const state = JSON.parse(stateStr);
+      // Lấy thêm thông tin bài hát nếu cần
+      const song = await prisma.song.findUnique({
+        where: { id: state.currentSongId },
+        select: { title: true, artist: { select: { stageName: true } } }
+      });
+
+      const friend = followingUsers.find((f: { followingId: string }) => f.followingId === friendId)?.following;
+
+      return {
+        user: friend,
+        currentSong: song ? {
+          id: state.currentSongId,
+          title: song.title,
+          artistName: song.artist.stageName
+        } : null,
+        isPlaying: state.isPlaying,
+        timestamp: state.timestamp
+      };
+    }));
+
+    return activities.filter(Boolean).sort((a, b) => (b as any).timestamp - (a as any).timestamp);
+  }
 };

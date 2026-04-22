@@ -3,6 +3,7 @@ import { Sidebar } from '../layout/Sidebar';
 import { Topbar } from '../layout/Topbar';
 import { PlayerBar } from '../player/PlayerBar';
 import { NowPlayingSidebar } from '../player/NowPlayingSidebar';
+import { FriendActivitySidebar } from './FriendActivitySidebar';
 import { Outlet } from 'react-router-dom';
 import { GlobalBanner } from './GlobalBanner';
 import { useAuthStore } from '../../stores/auth.store';
@@ -10,10 +11,12 @@ import { useNotificationStore } from '../../stores/notification.store';
 import { socketService } from '../../lib/socket';
 import { Toaster } from 'sonner';
 import { useUIStore } from '../../stores/ui.store';
+import { useFriendStore } from '../../stores/friend.store';
 
 export const MainLayout = () => {
   const { isAuthenticated } = useAuthStore();
-  const { initialize, fetchNotifications } = useNotificationStore();
+  const { initialize: initNotifications, fetchNotifications } = useNotificationStore();
+  const { initialize: initFriendActivity } = useFriendStore();
   const { isSidebarVisible } = useUIStore();
 
   useEffect(() => {
@@ -22,7 +25,8 @@ export const MainLayout = () => {
       socketService.connect();
       
       // 2. Khởi tạo store (listeners)
-      initialize();
+      initNotifications();
+      initFriendActivity();
       
       // 3. Lấy dữ liệu ban đầu
       fetchNotifications();
@@ -33,7 +37,7 @@ export const MainLayout = () => {
     return () => {
       // Tạm thời không disconnect khi unmount layout để tránh treo/nối lại liên tục
     };
-  }, [isAuthenticated, initialize, fetchNotifications]);
+  }, [isAuthenticated, initNotifications, initFriendActivity, fetchNotifications]);
 
   return (
     <div className="flex h-screen w-full flex-col bg-[#000000] overflow-hidden text-white">
@@ -59,6 +63,7 @@ export const MainLayout = () => {
         </main>
 
         <NowPlayingSidebar />
+        <FriendActivitySidebar />
       </div>
 
       {/* Bottom Section: Player Bar */}

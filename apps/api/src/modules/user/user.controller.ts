@@ -43,7 +43,29 @@ export const userController = {
 
   getPublicProfile: catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const result = await UserService.getPublicProfile(id);
+    const currentUserId = req.user?.id;
+    const result = await UserService.getPublicProfile(id, currentUserId);
     sendSuccess(res, result, 'Hồ sơ người dùng');
+  }),
+
+  // Social (Phase 16)
+  followUser: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const { id } = req.params;
+    const result = await UserService.followUser(user.id, id);
+    sendSuccess(res, result, 'Theo dõi thành công');
+  }),
+
+  unfollowUser: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const { id } = req.params;
+    const result = await UserService.unfollowUser(user.id, id);
+    sendSuccess(res, result, 'Bỏ theo dõi thành công');
+  }),
+
+  getFollowingActivity: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await UserService.getFollowingActivity(user.id);
+    sendSuccess(res, result, 'Hoạt động bạn bè');
   }),
 };
