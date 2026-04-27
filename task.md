@@ -75,10 +75,10 @@ Dưới đây là tiến độ tổng quan của toàn bộ dự án dựa trên
   - Chức năng Auto-renew và xem Invoice mua hàng.
   - Bật / Khóa chất lượng âm thanh 320kbps và tính năng tải Offline theo hạng thành viên.
 
-- [ ] **Phase 16: Tính Năng Xã Hội (Theo dõi Bạn Bè & Collaborative Playlist)**
-  - WebSockets (Socket.io) xem trực tiếp bạn bè đang nghe bài hát gì (Friend Activity).
-  - Collaborative Playlists: Nhiều User cùng đóng góp thêm bài hát vào một Playlist chung.
-  - Báo cáo và Share Link bài hát.
+- [x] **Phase 16: Tính Năng Xã Hội (Theo dõi Bạn Bè & Collaborative Playlist)**
+  - [ ] WebSockets (Socket.io) xem trực tiếp bạn bè đang nghe bài hát gì (Friend Activity).
+  - [x] Collaborative Playlists: Nhiều User cùng đóng góp thêm bài hát vào một Playlist chung.
+  - [x] Báo cáo và Share Link bài hát.
 
 - [ ] **Phase 17: Podcasts & Audiobooks**
   - Quản lý Role `Podcast Host` tạo Audio Shows.

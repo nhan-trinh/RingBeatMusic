@@ -24,6 +24,7 @@ import { notificationRouter } from './modules/notification/notification.router';
 import { moderationRouter } from './modules/moderation/moderation.router';
 import { adminRouter } from './modules/admin/admin.router';
 import { homeRouter } from './modules/home/home.router';
+import { reportRouter } from './modules/report/report.router';
 
 
 export const createApp = (): Application => {
@@ -78,6 +79,7 @@ export const createApp = (): Application => {
   app.use(`${API_V1}/moderation`, moderationRouter);
   app.use(`${API_V1}/admin`, adminRouter);
   app.use(`${API_V1}/home`, homeRouter);
+  app.use(`${API_V1}/reports`, reportRouter);
 
   // ---- 404 Handler ----
   app.use((_req: Request, res: Response) => {

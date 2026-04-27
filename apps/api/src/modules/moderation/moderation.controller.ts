@@ -29,13 +29,15 @@ export const moderationController = {
 
   resolveReport: catchAsync(async (req: Request, res: Response) => {
     const moderator = req.user!;
-    const result = await ModerationService.resolveReport(moderator.id, req.params.id, 'RESOLVED');
+    const { note } = req.body;
+    const result = await ModerationService.resolveReport(moderator.id, req.params.id, 'RESOLVED', note);
     sendSuccess(res, result);
   }),
 
   dismissReport: catchAsync(async (req: Request, res: Response) => {
     const moderator = req.user!;
-    const result = await ModerationService.resolveReport(moderator.id, req.params.id, 'DISMISSED');
+    const { note } = req.body;
+    const result = await ModerationService.resolveReport(moderator.id, req.params.id, 'DISMISSED', note);
     sendSuccess(res, result);
   }),
 

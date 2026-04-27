@@ -30,7 +30,7 @@ export const PlaylistService = {
         OR: [
           { ownerId: userId },
           { collaborators: { some: { userId } } },
-          { followedBy: { some: { userId } } }
+          { followers: { some: { userId } } }
         ]
       },
       orderBy: { updatedAt: 'desc' }

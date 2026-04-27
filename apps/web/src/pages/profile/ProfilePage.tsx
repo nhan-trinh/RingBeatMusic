@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { api } from '../../lib/api';
-import { User as UserIcon, Play, BadgeCheck } from 'lucide-react';
+import { User as UserIcon, Play, BadgeCheck, AlertTriangle, Share2 } from 'lucide-react';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { MediaCard } from '../../components/shared/MediaCard';
+import { useUIStore } from '../../stores/ui.store';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export const ProfilePage = () => {
   const { id } = useParams();
   const { user: currentUser } = useAuthStore();
+  const { openReportModal } = useUIStore();
   const [profile, setProfile] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +136,30 @@ export const ProfilePage = () => {
                   </button>
                 )
               )}
+
+              {/* Share & Report Actions */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Đã sao chép liên kết hồ sơ');
+                  }}
+                  className="p-2 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+                  title="Sao chép liên kết"
+                >
+                  <Share2 size={20} />
+                </button>
+                
+                {!isOwnProfile && currentUser && (
+                  <button
+                    onClick={() => openReportModal(profile.id, 'USER', profile.name)}
+                    className="p-2 rounded-full text-white/60 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
+                    title="Báo cáo người dùng"
+                  >
+                    <AlertTriangle size={20} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

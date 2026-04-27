@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Edit2, Trash2, Share2, Globe, Lock } from 'lucide-react';
+import { Edit2, Trash2, Share2, Globe, Lock, AlertTriangle } from 'lucide-react';
 import { useLibraryStore } from '../../stores/library.store';
 import { useAuthStore } from '../../stores/auth.store';
+import { useUIStore } from '../../stores/ui.store';
+import { toast } from 'sonner';
 
 interface Playlist {
   id: string;
@@ -26,6 +28,7 @@ export const PlaylistContextMenu = ({
 }: PlaylistContextMenuProps) => {
   const { deletePlaylist, updatePlaylist } = useLibraryStore();
   const { user } = useAuthStore();
+  const { openReportModal } = useUIStore();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isOwner = playlist.ownerId === user?.id;
@@ -80,13 +83,24 @@ export const PlaylistContextMenu = ({
 
       <MenuItem 
         icon={<Share2 size={15} />} 
-        label="Chia sẻ" 
+        label="Sao chép liên kết playlist" 
         onClick={() => { 
           navigator.clipboard.writeText(`${window.location.origin}/playlist/${playlist.id}`);
-          alert('Đã sao chép liên kết vào bộ nhớ tạm! 💎');
+          toast.success('Đã sao chép liên kết vào bộ nhớ tạm');
           onClose(); 
         }} 
       />
+
+      {!isOwner && user && (
+        <MenuItem 
+          icon={<AlertTriangle size={15} />} 
+          label="Báo cáo" 
+          onClick={() => {
+            openReportModal(playlist.id, 'PLAYLIST', playlist.title);
+            onClose();
+          }} 
+        />
+      )}
 
       {isOwner && (
         <MenuItem 

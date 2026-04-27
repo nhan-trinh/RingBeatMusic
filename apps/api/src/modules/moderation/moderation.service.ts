@@ -106,19 +106,21 @@ export const ModerationService = {
       include: {
         reporter: { select: { id: true, name: true, email: true } },
         song: { select: { id: true, title: true } },
+        playlist: { select: { id: true, title: true } },
+        targetUser: { select: { id: true, name: true, email: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
   },
 
-  resolveReport: async (moderatorId: string, reportId: string, action: 'RESOLVED' | 'DISMISSED') => {
+  resolveReport: async (moderatorId: string, reportId: string, action: 'RESOLVED' | 'DISMISSED', note?: string) => {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report) throw new AppError('Report không tồn tại', 404, ErrorCodes.NOT_FOUND);
 
     await prisma.report.update({
       where: { id: reportId },
-      data: { status: action, resolvedBy: moderatorId, resolvedAt: new Date() },
+      data: { status: action, resolvedBy: moderatorId, resolvedAt: new Date(), note },
     });
 
     return { message: `Report đã được ${action === 'RESOLVED' ? 'xử lý' : 'bỏ qua'}` };
@@ -149,6 +151,13 @@ export const ModerationService = {
     if (totalStrikes >= 3) {
       // Auto-ban
       await prisma.user.update({ where: { id: targetUserId }, data: { isBanned: true, banReason: 'Bị khóa do vi phạm 3 lần' } });
+      
+      // DISMISS all reports created by this user (Anti-abuse)
+      await prisma.report.updateMany({
+        where: { reportedBy: targetUserId, status: 'PENDING' },
+        data: { status: 'DISMISSED', note: 'Tự động từ chối do người báo cáo đã bị khóa tài khoản' }
+      });
+
       await redis.del(`refresh_token:${targetUserId}`);
       
       // Thông báo khóa TK

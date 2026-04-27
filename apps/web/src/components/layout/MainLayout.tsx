@@ -12,6 +12,7 @@ import { socketService } from '../../lib/socket';
 import { Toaster } from 'sonner';
 import { useUIStore } from '../../stores/ui.store';
 import { useFriendStore } from '../../stores/friend.store';
+import { ReportModal } from '../shared/ReportModal';
 
 export const MainLayout = () => {
   const { isAuthenticated } = useAuthStore();
@@ -43,6 +44,7 @@ export const MainLayout = () => {
     <div className="flex h-screen w-full flex-col bg-[#000000] overflow-hidden text-white">
       <Toaster richColors position="top-right" theme="dark" />
       <GlobalBanner />
+      <ReportModal />
       {/* Top Section: Sidebar + Main Content */}
       <div className="flex flex-1 overflow-hidden p-2 gap-2 pb-0 relative">
         <div className={`transition-all duration-300 ease-in-out h-full overflow-hidden ${isSidebarVisible ? 'w-[300px] opacity-100' : 'w-0 opacity-0'}`}>

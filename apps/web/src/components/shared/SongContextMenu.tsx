@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, ListPlus, Plus, Trash2, PlayCircle } from 'lucide-react';
+import { Heart, ListPlus, Plus, Trash2, PlayCircle, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { useLibraryStore } from '../../stores/library.store';
 import { useAuthStore } from '../../stores/auth.store';
+import { useUIStore } from '../../stores/ui.store';
+import { toast } from 'sonner';
 
 interface Song {
   id: string;
@@ -29,6 +31,7 @@ export const SongContextMenu = ({
 }: SongContextMenuProps) => {
   const { isAuthenticated } = useAuthStore();
   const { isLiked, toggleLike, playlists, addSongToPlaylist, createPlaylist } = useLibraryStore();
+  const { openReportModal } = useUIStore();
   const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
@@ -155,6 +158,31 @@ export const SongContextMenu = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Share & Report */}
+      <div className="border-t border-[#3e3e3e] my-1" />
+      
+      <MenuItem 
+        icon={<LinkIcon size={15} />} 
+        label="Sao chép liên kết bài hát" 
+        onClick={() => {
+          const url = `${window.location.origin}/track/${song.id}`;
+          navigator.clipboard.writeText(url);
+          toast.success('Đã sao chép liên kết vào bộ nhớ tạm');
+          onClose();
+        }} 
+      />
+
+      {isAuthenticated && (
+        <MenuItem 
+          icon={<AlertTriangle size={15} />} 
+          label="Báo cáo" 
+          onClick={() => {
+            openReportModal(song.id, 'SONG', song.title);
+            onClose();
+          }} 
+        />
       )}
 
       {/* Remove from playlist (chỉ hiện khi được truyền prop) */}

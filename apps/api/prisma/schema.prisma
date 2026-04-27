@@ -74,6 +74,21 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum ReportType {
+  SONG
+  PLAYLIST
+  USER
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT // Nội dung không phù hợp
+  COPYRIGHT_VIOLATION   // Vi phạm bản quyền
+  SPAM                  // Spam
+  FAKE_ACCOUNT          // Tài khoản giả mạo
+  HATE_SPEECH           // Ngôn từ thù địch
+  OTHER                 // Khác
+}
+
 enum StrikeReason {
   COPYRIGHT_VIOLATION
   INAPPROPRIATE_CONTENT
@@ -126,6 +141,8 @@ model User {
   followedPlaylists  PlaylistFollower[]
   hiddenSongs        HiddenSong[]
   reports            Report[]         @relation("ReportedBy")
+  targetReports      Report[]         @relation("ReportTarget")
+  resolvedReports    Report[]         @relation("ResolvedBy")
   strikes            Strike[]
   issuedStrikes      Strike[]         @relation("IssuedBy")
   auditLogs          AuditLog[]       @relation("Actor")
@@ -256,9 +273,10 @@ model Playlist {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  songs         PlaylistSong[]
-  collaborators PlaylistCollaborator[]
-  followedBy    PlaylistFollower[]
+  songs           PlaylistSong[]
+  collaborators   PlaylistCollaborator[]
+  followers       PlaylistFollower[]
+  reports         Report[]
 }
 
 model PlaylistSong {
@@ -384,17 +402,36 @@ model Invoice {
 // =============================================
 
 model Report {
-  id         String       @id @default(uuid())
-  reportedBy String
-  reporter   User         @relation("ReportedBy", fields: [reportedBy], references: [id])
-  songId     String?
-  song       Song?        @relation(fields: [songId], references: [id])
-  reason     String
-  status     ReportStatus @default(PENDING)
-  resolvedBy String? // Moderator userId
-  resolvedAt DateTime?
-  note       String?
-  createdAt  DateTime     @default(now())
+  id           String       @id @default(uuid())
+  reportedBy   String
+  reporter     User         @relation("ReportedBy", fields: [reportedBy], references: [id])
+  
+  targetType   ReportType
+  
+  songId       String?
+  song         Song?        @relation(fields: [songId], references: [id])
+  
+  playlistId   String?
+  playlist     Playlist?    @relation(fields: [playlistId], references: [id])
+  
+  targetUserId String?
+  targetUser   User?        @relation("ReportTarget", fields: [targetUserId], references: [id])
+  
+  reason       ReportReason
+  description  String?      // Ghi chú thêm từ người dùng
+  status       ReportStatus @default(PENDING)
+  
+  resolvedBy   String?      // Moderator/Admin userId
+  resolver     User?        @relation("ResolvedBy", fields: [resolvedBy], references: [id])
+  resolvedAt   DateTime?
+  note         String?      // Ghi chú xử lý của Mod/Admin
+  
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([reportedBy, songId], map: "unique_song_report")
+  @@unique([reportedBy, playlistId], map: "unique_playlist_report")
+  @@unique([reportedBy, targetUserId], map: "unique_user_report")
 }
 
 model Strike {
