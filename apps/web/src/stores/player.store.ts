@@ -84,7 +84,7 @@ export const usePlayerStore = create<PlayerState>()(
     if (_howl && isPlaying) {
       const currentProgress = _howl.seek() as number;
       set({ progress: currentProgress });
-      if (currentProgress > 10 && !hasRecordedPlay && currentTrack) {
+      if (currentProgress > 30 && !hasRecordedPlay && currentTrack) {
         set({ hasRecordedPlay: true });
         api.post(`/songs/${currentTrack.id}/play`).catch(() => {});
       }

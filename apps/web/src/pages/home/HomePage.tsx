@@ -10,7 +10,6 @@ import { Link } from 'react-router-dom';
 export const HomePage = () => {
   const [dominantColor, setDominantColor] = useState('#121212');
 
-  // Luyện data trang chủ bằng React Query (Cache vô hạn siêu bám dính)
   const { data: feedData } = useQuery({
     queryKey: ['homeFeed'],
     queryFn: async () => {
@@ -19,9 +18,22 @@ export const HomePage = () => {
     }
   });
 
+  // Dữ liệu cá nhân hóa (Gần đây, Nghe lại, Daily Mix)
+  const { data: personalizedData } = useQuery({
+    queryKey: ['personalizedFeed'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/home/personalized') as any;
+        return res.data;
+      } catch (e) {
+        return null;
+      }
+    }
+  });
+
   useEffect(() => {
     if (!feedData) return;
-    
+
     // Phát hiện màu từ ảnh đầu tiên
     const firstUrl = feedData?.recentlyPlayed?.[0]?.coverUrl;
     if (firstUrl && firstUrl.length > 5) {
@@ -61,13 +73,13 @@ export const HomePage = () => {
           ))}
         </div>
 
-        {/* Skeleton cho Made for you */}
+        {/* Skeleton cho Daily Mix / Personalized Sections */}
         <div className="mb-8">
-          <div className="h-8 w-48 bg-white/10 rounded mb-4 animate-pulse"></div>
+          <div className="h-8 w-64 bg-white/10 rounded mb-4 animate-pulse"></div>
           <div className="flex gap-6 overflow-hidden">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-[#181818] p-4 rounded-md animate-pulse min-w-[200px] flex-1">
-                <div className="w-full aspect-square bg-white/10 rounded mb-4 shadow-[0_8px_24px_rgba(0,0,0,0.5)]"></div>
+                <div className="w-full aspect-square bg-white/10 rounded mb-4"></div>
                 <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
                 <div className="h-3 bg-white/10 rounded w-1/2"></div>
               </div>
@@ -89,12 +101,77 @@ export const HomePage = () => {
       <div className="px-6 pt-20 pb-28 relative z-10 w-full max-w-screen-2xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-6 tracking-tight">{getGreeting()}</h1>
 
-        {/* Recently Played Grid */}
+        {/* Top Grid (Recently Played Playlists) */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-10 w-full">
           {feedData.recentlyPlayed?.map((item: any) => (
-            <RecentCard key={item.id} id={item.id} title={item.title} coverUrl={item.coverUrl} songs={item.songs} isSong={item.isSong} />
+            <RecentCard
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              coverUrl={item.coverUrl}
+              type="playlist"
+              songs={item.songs}
+            />
           ))}
         </div>
+
+        {/* 🕒 Recently Visited (Mixed Types) */}
+        {personalizedData?.recentlyVisited?.length > 0 && (
+          <Section title="Vừa truy cập gần đây">
+            <MediaCarousel>
+              {personalizedData.recentlyVisited.map((item: any) => (
+                <MediaCard
+                  key={`${item.type}-${item.id}`}
+                  id={item.id}
+                  title={item.title}
+                  subtitle={item.subTitle || item.type}
+                  coverUrl={item.coverUrl}
+                  type={item.type?.toLowerCase() as any}
+                  songs={item.type === 'SONG' ? [item] : item.songs}
+                  isCircle={item.type === 'ARTIST'}
+                />
+              ))}
+            </MediaCarousel>
+          </Section>
+        )}
+
+        {/* 🌟 Daily Mix Section */}
+        {personalizedData?.dailyMix?.length > 0 && (
+          <Section title="Dành cho hôm nay" showAllLink="/section/daily-mix">
+            <MediaCarousel>
+              {personalizedData.dailyMix.map((song: any) => (
+                <MediaCard
+                  key={song.id}
+                  id={song.id}
+                  title={song.title}
+                  subtitle={song.artistName}
+                  coverUrl={song.coverUrl}
+                  type="song"
+                  songs={[song]}
+                />
+              ))}
+            </MediaCarousel>
+          </Section>
+        )}
+
+        {/* 🌟 Listen Again Section */}
+        {personalizedData?.listenAgain?.length > 0 && (
+          <Section title="Nghe lại" showAllLink="/section/listen-again">
+            <MediaCarousel>
+              {personalizedData.listenAgain.map((item: any) => (
+                <MediaCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.title}
+                  subtitle={item.artistName}
+                  coverUrl={item.coverUrl}
+                  type="song"
+                  songs={[item]}
+                />
+              ))}
+            </MediaCarousel>
+          </Section>
+        )}
 
         {/* Made For You Section */}
         <Section title="Dành cho bạn" showAllLink="/section/made-for-you">
@@ -121,14 +198,14 @@ export const HomePage = () => {
           <Section title="Mới phát hành" showAllLink="/section/new-releases">
             <MediaCarousel>
               {feedData.newReleases?.map((song: any) => (
-                <MediaCard 
-                   key={song.id} 
-                   id={song.id} 
-                   title={song.title} 
-                   subtitle={song.artistName} 
-                   coverUrl={song.coverUrl} 
-                   type="song"
-                   songs={[song]}
+                <MediaCard
+                  key={song.id}
+                  id={song.id}
+                  title={song.title}
+                  subtitle={song.artistName}
+                  coverUrl={song.coverUrl}
+                  type="song"
+                  songs={[song]}
                 />
               ))}
             </MediaCarousel>
@@ -139,17 +216,17 @@ export const HomePage = () => {
         {feedData.topSongs?.length > 0 && (
           <Section title="Được nghe nhiều nhất" showAllLink="/section/top-songs">
             <MediaCarousel>
-                {feedData.topSongs?.map((song: any) => (
-                  <MediaCard 
-                    key={song.id} 
-                    id={song.id} 
-                    title={song.title} 
-                    subtitle={song.artistName} 
-                    coverUrl={song.coverUrl} 
-                    type="song"
-                    songs={[song]}
-                  />
-                ))}
+              {feedData.topSongs?.map((song: any) => (
+                <MediaCard
+                  key={song.id}
+                  id={song.id}
+                  title={song.title}
+                  subtitle={song.artistName}
+                  coverUrl={song.coverUrl}
+                  type="song"
+                  songs={[song]}
+                />
+              ))}
             </MediaCarousel>
           </Section>
         )}
@@ -158,16 +235,35 @@ export const HomePage = () => {
         {feedData.newAlbums?.length > 0 && (
           <Section title="Album mới phát hành" showAllLink="/section/new-albums">
             <MediaCarousel>
-                {feedData.newAlbums?.map((album: any) => (
-                  <MediaCard 
-                    key={album.id} 
-                    id={album.id} 
-                    title={album.title} 
-                    subtitle={album.artistName} 
-                    coverUrl={album.coverUrl} 
-                    type="album"
-                  />
-                ))}
+              {feedData.newAlbums?.map((album: any) => (
+                <MediaCard
+                  key={album.id}
+                  id={album.id}
+                  title={album.title}
+                  subtitle={album.artistName}
+                  coverUrl={album.coverUrl}
+                  type="album"
+                />
+              ))}
+            </MediaCarousel>
+          </Section>
+        )}
+
+        {/* ✅ Recommended Artists */}
+        {personalizedData?.recommendedArtists?.length > 0 && (
+          <Section title="Nghệ sĩ bạn có thể thích">
+            <MediaCarousel>
+              {personalizedData.recommendedArtists.map((artist: any) => (
+                <MediaCard
+                  key={artist.id}
+                  id={artist.id}
+                  title={artist.stageName}
+                  subtitle="Nghệ sĩ"
+                  coverUrl={artist.avatarUrl}
+                  type="artist"
+                  isCircle={true}
+                />
+              ))}
             </MediaCarousel>
           </Section>
         )}

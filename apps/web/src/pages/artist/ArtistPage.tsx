@@ -8,6 +8,7 @@ import { FastAverageColor } from 'fast-average-color';
 import { Play, Pause, MoreHorizontal, BadgeCheck, Heart } from 'lucide-react';
 import { SongContextMenu, useContextMenu } from '../../components/shared/SongContextMenu';
 import { formatTime, cn } from '../../lib/utils';
+import { useInteractionTracker } from '../../hooks/useInteractionTracker';
 
 export const ArtistPage = () => {
   const { id } = useParams();
@@ -25,6 +26,9 @@ export const ArtistPage = () => {
   const { setContextAndPlay, currentContextId, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isFollowing, toggleFollow, isLiked, toggleLike } = useLibraryStore();
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
+  
+  // Tracking tương tác
+  useInteractionTracker('ARTIST', id);
 
   useEffect(() => {
     if (!artist) return;

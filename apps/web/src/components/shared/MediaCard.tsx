@@ -78,7 +78,7 @@ export const MediaCard = ({ id, title, subtitle, coverUrl, isCircle = false, son
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative mb-4 w-full pb-[100%] shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+      <div className="relative mb-4 w-full pb-[100%]">
         <img
           src={coverUrl}
           alt={title}
@@ -102,7 +102,7 @@ export const MediaCard = ({ id, title, subtitle, coverUrl, isCircle = false, son
       <p className="text-[#a7a7a7] text-sm font-medium line-clamp-2">{subtitle}</p>
 
       {songMenu && (
-        <SongContextMenu 
+        <SongContextMenu
           song={songMenu.song}
           position={songMenu.position}
           onClose={closeSongMenu}
@@ -111,7 +111,7 @@ export const MediaCard = ({ id, title, subtitle, coverUrl, isCircle = false, son
       )}
 
       {playlistMenu && (
-        <PlaylistContextMenu 
+        <PlaylistContextMenu
           playlist={playlistMenu.playlist}
           position={playlistMenu.position}
           onClose={closePlaylistMenu}

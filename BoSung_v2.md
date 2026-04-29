@@ -17,6 +17,7 @@
 - Hiển thị tối đa 8–12 item gần nhất
 - Ẩn nếu nội dung đã bị BANNED/ARCHIVED
 - Chỉ hiện khi đã đăng nhập
+- Không duplicate (chỉ được hiện 1 lần nếu user nghe hay tương tác nhiều lần thì chỉ cần soft lên đầu)
 
 ### 1.2 Nghe lại (Listen Again)
 - Khác "Gần đây" — chỉ tính nội dung đã thực sự **phát nhạc**

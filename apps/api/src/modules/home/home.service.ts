@@ -1,6 +1,7 @@
 import { prisma } from '../../shared/config/database';
 import { redis } from '../../shared/config/redis';
 import { DiscoveryService } from '../discovery/discovery.service';
+import { PlayerService } from '../player/player.service';
 
 export const HomeService = {
   getFeed: async (userId?: string) => {
@@ -141,5 +142,24 @@ export const HomeService = {
 
     await redis.set(cacheKey, JSON.stringify(data), 'EX', 3600);
     return data;
+  },
+
+  getPersonalizedData: async (userId: string) => {
+    // Gọi song song các service để tối ưu performance
+    const [recentlyVisited, listenAgain, dailyMix, recommendedAlbums, recommendedArtists] = await Promise.all([
+      PlayerService.getRecentlyVisited(userId),
+      PlayerService.getRecentlyPlayed(userId),
+      DiscoveryService.getDailyMix(userId),
+      DiscoveryService.getRecommendedAlbums(userId),
+      DiscoveryService.getRecommendedArtists(userId),
+    ]);
+
+    return {
+      recentlyVisited,
+      listenAgain,
+      dailyMix,
+      recommendedAlbums,
+      recommendedArtists
+    };
   }
 };

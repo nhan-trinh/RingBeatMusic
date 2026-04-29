@@ -12,4 +12,11 @@ export const homeController = {
     const data = await HomeService.getSettings();
     sendSuccess(res, data);
   }),
+  getPersonalized: catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) return sendSuccess(res, {}, 'Chưa đăng nhập');
+    
+    const data = await HomeService.getPersonalizedData(userId);
+    return sendSuccess(res, data, 'Lấy dữ liệu cá nhân hóa thành công');
+  }),
 };

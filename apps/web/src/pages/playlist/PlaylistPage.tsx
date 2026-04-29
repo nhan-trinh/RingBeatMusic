@@ -14,6 +14,7 @@ import { SongContextMenu, useContextMenu } from '../../components/shared/SongCon
 import { PlaylistContextMenu, usePlaylistContextMenu } from '../../components/shared/PlaylistContextMenu';
 import { CollaboratorModal } from '../../components/playlist/CollaboratorModal';
 import { toast } from 'sonner';
+import { useInteractionTracker } from '../../hooks/useInteractionTracker';
 
 export const PlaylistPage = () => {
   const { id } = useParams();
@@ -30,6 +31,9 @@ export const PlaylistPage = () => {
   const playlistFollowed = id ? isFollowingPlaylist(id) : false;
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
   const { menu: playlistMenu, openPlaylistMenu, closePlaylistMenu } = usePlaylistContextMenu();
+
+  // Tracking tương tác
+  useInteractionTracker('PLAYLIST', id);
 
   const { data: playlist, isLoading: loading } = useQuery({
     queryKey: ['playlist', id],

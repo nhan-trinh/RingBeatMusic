@@ -10,6 +10,8 @@ playerRouter.use(authMiddleware);
 playerRouter.post('/play-count', playerController.recordPlay);
 playerRouter.get('/history', playerController.getHistory);
 playerRouter.get('/recently-played', playerController.getRecentlyPlayed);
+playerRouter.get('/recently-visited', playerController.getRecentlyVisited);
+playerRouter.post('/track-interaction', playerController.recordInteraction);
 
 // Redis Queue
 playerRouter.get('/queue', playerController.getQueue);

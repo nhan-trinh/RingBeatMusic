@@ -33,7 +33,20 @@ export const playerController = {
   getRecentlyPlayed: catchAsync(async (req: Request, res: Response) => {
     const user = req.user!;
     const result = await PlayerService.getRecentlyPlayed(user.id);
-    sendSuccess(res, result, 'Bài hát nghe gần đây');
+    sendSuccess(res, result, 'Bài hát nghe lại');
+  }),
+
+  getRecentlyVisited: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const result = await PlayerService.getRecentlyVisited(user.id);
+    sendSuccess(res, result, 'Nội dung xem gần đây');
+  }),
+
+  recordInteraction: catchAsync(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const { type, targetId } = req.body;
+    const result = await PlayerService.trackInteraction(user.id, type, targetId);
+    sendSuccess(res, result, 'Đã ghi nhận tương tác');
   }),
 
   checkSkipLimit: catchAsync(async (req: Request, res: Response) => {

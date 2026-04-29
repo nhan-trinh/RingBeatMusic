@@ -8,6 +8,7 @@ import { FastAverageColor } from 'fast-average-color';
 import { Play, Pause, Heart, MoreHorizontal, Clock, BadgeCheck } from 'lucide-react';
 import { formatTime, cn } from '../../lib/utils';
 import { SongContextMenu, useContextMenu } from '../../components/shared/SongContextMenu';
+import { useInteractionTracker } from '../../hooks/useInteractionTracker';
 
 const AlbumSkeleton = () => (
   <div className="flex-1 w-full min-h-full bg-[#121212] text-white">
@@ -56,6 +57,9 @@ export const AlbumPage = () => {
   const { isLiked, toggleLike, isFollowingAlbum, toggleFollowAlbum } = useLibraryStore();
   const albumFollowed = id ? isFollowingAlbum(id) : false;
   const { menu: trackMenu, openMenu: openTrackMenu, closeMenu: closeTrackMenu } = useContextMenu();
+  
+  // Tracking tương tác
+  useInteractionTracker('ALBUM', id);
 
   useEffect(() => {
     if (!album) return;

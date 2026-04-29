@@ -1,14 +1,25 @@
 import { prisma } from '../../shared/config/database';
 import { redis } from '../../shared/config/redis';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
-import { ListeningHistory, RecentlyPlayed } from './player.model';
+import { ListeningHistory, RecentlyPlayed, InteractionHistory } from './player.model';
+
+const mapSong = (s: any) => ({
+  id: s.id,
+  title: s.title,
+  artistName: s.artist?.stageName || 'N/A',
+  artistId: s.artistId,
+  coverUrl: s.coverUrl,
+  audioUrl: s.audioUrl320 || s.audioUrl128 || '',
+  canvasUrl: s.canvasUrl,
+  duration: s.duration,
+});
 
 export const PlayerService = {
   // 1. Queue Management bằng Redis
   getQueue: async (userId: string) => {
     const queueData = await redis.get(`queue:${userId}`);
     if (!queueData) return [];
-    
+
     // Tối ưu: Lấy thông tin bài hát từ PostgreSQL dựa trên list IDs của Queue
     const songIds: string[] = JSON.parse(queueData);
     if (songIds.length === 0) return [];
@@ -56,13 +67,47 @@ export const PlayerService = {
       // Bước 2: Push lại vào cuối mảng (sẽ thành mới nhất)
       await RecentlyPlayed.findOneAndUpdate(
         { userId },
-        { 
-          $push: { 
-            items: { 
-              $each: [{ songId, playedAt: new Date() }], 
-              $slice: -50, 
-              $sort: { playedAt: 1 } 
-            } 
+        {
+          $push: {
+            items: {
+              $each: [{ songId, playedAt: new Date() }],
+              $slice: -50,
+              $sort: { playedAt: 1 }
+            }
+          },
+          updatedAt: new Date()
+        },
+        { upsert: true, new: true }
+      );
+
+      // d. Ghi nhận tương tác chung (Recently Visited)
+      await PlayerService.trackInteraction(userId, 'SONG', songId);
+
+      return { success: true };
+    } catch (e) {
+      console.error('Lỗi recordPlay:', e);
+      throw new AppError('Không thể ghi nhận lịch sử', 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+
+  // 3. Ghi nhận tương tác (Click Artist/Album/Playlist/Song)
+  trackInteraction: async (userId: string, type: 'ARTIST' | 'ALBUM' | 'PLAYLIST' | 'SONG', targetId: string) => {
+    try {
+      // Bỏ trùng và đưa lên đầu
+      await InteractionHistory.updateOne(
+        { userId },
+        { $pull: { items: { targetId, type } } }
+      );
+
+      await InteractionHistory.findOneAndUpdate(
+        { userId },
+        {
+          $push: {
+            items: {
+              $each: [{ type, targetId, visitedAt: new Date() }],
+              $slice: -20, // Lưu tối đa 20 lượt tương tác gần nhất
+              $sort: { visitedAt: 1 }
+            }
           },
           updatedAt: new Date()
         },
@@ -71,8 +116,8 @@ export const PlayerService = {
 
       return { success: true };
     } catch (e) {
-      console.error('Lỗi recordPlay:', e);
-      throw new AppError('Không thể ghi nhận lịch sử', 500, ErrorCodes.INTERNAL_ERROR);
+      console.error('Lỗi trackInteraction:', e);
+      return { success: false };
     }
   },
 
@@ -86,7 +131,7 @@ export const PlayerService = {
     // Map với data Postgre nếu cần
     // (Lý do: Mongo chỉ lưu songId logic, muốn lấy title phải fetch Prisma)
     const songIds = Array.from(new Set(history.map(h => h.songId)));
-    
+
     if (songIds.length === 0) return [];
 
     const songs = await prisma.song.findMany({
@@ -103,7 +148,7 @@ export const PlayerService = {
         artist: { select: { stageName: true } }
       }
     });
-    
+
     const songMap = new Map(songs.map(s => [s.id, s]));
 
     return history.map(h => {
@@ -130,7 +175,84 @@ export const PlayerService = {
     });
   },
 
-  // 4. Recently Played API
+  // 4. Lấy lịch sử tương tác tổng hợp (Recently Visited)
+  getRecentlyVisited: async (userId: string) => {
+    const doc = await InteractionHistory.findOne({ userId }).lean();
+    if (!doc || !doc.items || doc.items.length === 0) return [];
+
+    // Mới nhất lên đầu
+    const items = [...doc.items].reverse();
+
+    // Thu thập IDs theo loại
+    const songIds: string[] = [];
+    const albumIds: string[] = [];
+    const artistIds: string[] = [];
+    const playlistIds: string[] = [];
+
+    items.forEach(item => {
+      if (item.type === 'SONG') songIds.push(item.targetId);
+      if (item.type === 'ALBUM') albumIds.push(item.targetId);
+      if (item.type === 'ARTIST') artistIds.push(item.targetId);
+      if (item.type === 'PLAYLIST') playlistIds.push(item.targetId);
+    });
+
+    // Fetch song data
+    const songs = songIds.length > 0 ? await prisma.song.findMany({
+      where: { id: { in: songIds } },
+      select: { id: true, title: true, coverUrl: true, artist: { select: { stageName: true } } }
+    }) : [];
+
+    // Fetch album data
+    const albums = albumIds.length > 0 ? await prisma.album.findMany({
+      where: { id: { in: albumIds } },
+      select: { 
+        id: true, 
+        title: true, 
+        coverUrl: true, 
+        artist: { select: { stageName: true } },
+        songs: { take: 10, include: { artist: true } }
+      }
+    }) : [];
+
+    // Fetch artist data
+    const artists = artistIds.length > 0 ? await prisma.artist.findMany({
+      where: { id: { in: artistIds } },
+      select: { id: true, stageName: true, avatarUrl: true }
+    }) : [];
+
+    // Fetch playlist data
+    const playlists = playlistIds.length > 0 ? await prisma.playlist.findMany({
+      where: { id: { in: playlistIds } },
+      select: { 
+        id: true, 
+        title: true, 
+        coverUrl: true, 
+        owner: { select: { name: true } },
+        songs: { take: 10, include: { song: { include: { artist: true } } } } 
+      }
+    }) : [];
+
+    // Map lại theo đúng thứ tự thời gian
+    const dataMap = new Map();
+    songs.forEach(s => dataMap.set(`SONG:${s.id}`, { ...mapSong(s), type: 'SONG', subTitle: s.artist.stageName }));
+    albums.forEach(a => dataMap.set(`ALBUM:${a.id}`, { 
+      ...a, 
+      type: 'ALBUM', 
+      subTitle: a.artist.stageName,
+      songs: a.songs.map((s: any) => mapSong(s))
+    }));
+    artists.forEach(art => dataMap.set(`ARTIST:${art.id}`, { id: art.id, title: art.stageName, coverUrl: art.avatarUrl, type: 'ARTIST', subTitle: 'Nghệ sĩ' }));
+    playlists.forEach(p => dataMap.set(`PLAYLIST:${p.id}`, { 
+      ...p, 
+      type: 'PLAYLIST', 
+      subTitle: p.owner?.name || 'Spotify',
+      songs: p.songs.map((ps: any) => mapSong(ps.song))
+    }));
+
+    return items.map(item => dataMap.get(`${item.type}:${item.targetId}`)).filter(Boolean);
+  },
+
+  // 5. Recently Played API (Listen Again)
   getRecentlyPlayed: async (userId: string) => {
     const doc = await RecentlyPlayed.findOne({ userId }).lean();
     if (!doc || !doc.items || doc.items.length === 0) return [];
@@ -159,31 +281,27 @@ export const PlayerService = {
     return uniqueIds.map(id => {
       const song = songMap.get(id);
       if (!song) return null;
-      return {
-        ...song,
-        artistName: song.artist.stageName,
-        audioUrl: song.audioUrl320 || song.audioUrl128 || '',
-      };
+      return mapSong(song);
     }).filter(Boolean);
   },
 
   // 5. Kiểm tra quyền Skip của Free User
   checkSkipLimit: async (userId: string, role: string) => {
-     if (role !== 'USER_FREE') return { canSkip: true };
+    if (role !== 'USER_FREE') return { canSkip: true };
 
-     const cacheKey = `skip_count:${userId}`;
-     const currentStr = await redis.get(cacheKey);
-     let current = currentStr ? parseInt(currentStr) : 0;
+    const cacheKey = `skip_count:${userId}`;
+    const currentStr = await redis.get(cacheKey);
+    let current = currentStr ? parseInt(currentStr) : 0;
 
-     if (current >= 6) {
-        throw new AppError('Bạn đã dùng hết 6 lượt bỏ qua bài trong giờ này. Vui lòng nâng cấp Premium.', 403, ErrorCodes.FORBIDDEN);
-     }
+    if (current >= 6) {
+      throw new AppError('Bạn đã dùng hết 6 lượt bỏ qua bài trong giờ này. Vui lòng nâng cấp Premium.', 403, ErrorCodes.FORBIDDEN);
+    }
 
-     const multi = redis.multi();
-     multi.incr(cacheKey);
-     if (!current) multi.expire(cacheKey, 3600); // 1 giờ
-     await multi.exec();
+    const multi = redis.multi();
+    multi.incr(cacheKey);
+    if (!current) multi.expire(cacheKey, 3600); // 1 giờ
+    await multi.exec();
 
-     return { canSkip: true, remaining: 5 - current };
+    return { canSkip: true, remaining: 5 - current };
   }
 };

@@ -42,3 +42,27 @@ const recentlyPlayedSchema = new Schema<IRecentlyPlayed>({
 });
 
 export const RecentlyPlayed = mongoose.model<IRecentlyPlayed>('RecentlyPlayed', recentlyPlayedSchema);
+
+export interface IInteractionHistory extends Document {
+  userId: string;
+  items: Array<{
+    type: 'ARTIST' | 'ALBUM' | 'PLAYLIST' | 'SONG';
+    targetId: string;
+    visitedAt: Date;
+  }>;
+  updatedAt: Date;
+}
+
+const interactionHistorySchema = new Schema<IInteractionHistory>({
+  userId: { type: String, required: true, unique: true },
+  items: [
+    {
+      type: { type: String, enum: ['ARTIST', 'ALBUM', 'PLAYLIST', 'SONG'], required: true },
+      targetId: { type: String, required: true },
+      visitedAt: { type: Date, default: Date.now },
+    }
+  ],
+  updatedAt: { type: Date, default: Date.now },
+});
+
+export const InteractionHistory = mongoose.model<IInteractionHistory>('InteractionHistory', interactionHistorySchema);

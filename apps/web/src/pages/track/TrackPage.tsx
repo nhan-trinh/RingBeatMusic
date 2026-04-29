@@ -8,6 +8,7 @@ import { FastAverageColor } from 'fast-average-color';
 import { Play, Pause, Heart, Music2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { parseLRC, SyncedLyricLine } from '../../lib/lrc-parser';
+import { useInteractionTracker } from '../../hooks/useInteractionTracker';
 
 export const TrackPage = () => {
   const { id } = useParams();
@@ -20,6 +21,9 @@ export const TrackPage = () => {
 
   const activeLyricRef = useRef<HTMLParagraphElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Tracking tương tác
+  useInteractionTracker('SONG', id);
 
   // Hook Luyện lấy dữ liệu từ React Query (Đã bật Cache Level 2)
   const { data: song, isLoading: loading } = useQuery({

@@ -1,154 +1,41 @@
-Logs: [{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/NowPlayingSidebar.tsx",
+[{
+	"resource": "/e:/SuperProject/apps/api/src/modules/player/player.service.ts",
 	"owner": "typescript",
-	"code": "18047",
+	"code": "2353",
 	"severity": 8,
-	"message": "'currentTrack' is possibly 'null'.",
+	"message": "Object literal may only specify known properties, and 'user' does not exist in type 'PlaylistSelect<DefaultArgs>'.",
 	"source": "ts",
-	"startLineNumber": 65,
-	"startColumn": 8,
-	"endLineNumber": 65,
-	"endColumn": 20,
+	"startLineNumber": 209,
+	"startColumn": 56,
+	"endLineNumber": 209,
+	"endColumn": 60,
 	"origin": "extHost1"
 }]
 
 [{
-	"resource": "/e:/SuperProject/apps/web/src/stores/ui.store.ts",
+	"resource": "/e:/SuperProject/apps/api/src/modules/player/player.service.ts",
 	"owner": "typescript",
-	"code": "2741",
+	"code": "2339",
 	"severity": 8,
-	"message": "Property 'isFriendActivityVisible' is missing in type '{ isNowPlayingVisible: false; isSidebarVisible: true; isQueueVisible: false; reportTarget: null; toggleNowPlaying: () => void; setNowPlayingVisible: (visible: boolean) => void; toggleQueue: () => void; ... 6 more ...; closeReportModal: () => void; }' but required in type 'UIState'.",
+	"message": "Property 'user' does not exist on type '{ id: string; updatedAt: Date; description: string | null; title: string; coverUrl: string | null; createdAt: Date; ownerId: string | null; isPublic: boolean; isSystem: boolean; isFeatured: boolean; isPinned: boolean; isCollaborative: boolean; }'.",
 	"source": "ts",
-	"startLineNumber": 24,
-	"startColumn": 14,
-	"endLineNumber": 57,
-	"endColumn": 7,
-	"relatedInformation": [
-		{
-			"startLineNumber": 7,
-			"startColumn": 3,
-			"endLineNumber": 7,
-			"endColumn": 26,
-			"message": "'isFriendActivityVisible' is declared here.",
-			"resource": "/e:/SuperProject/apps/web/src/stores/ui.store.ts"
-		}
-	],
+	"startLineNumber": 217,
+	"startColumn": 98,
+	"endLineNumber": 217,
+	"endColumn": 102,
 	"origin": "extHost1"
 }]
 
 [{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/PlayerBar.tsx",
+	"resource": "/e:/SuperProject/apps/api/src/modules/home/home.controller.ts",
 	"owner": "typescript",
-	"code": "6133",
+	"code": "7030",
 	"severity": 4,
-	"message": "'isQueuePage' is declared but its value is never read.",
+	"message": "Not all code paths return a value.",
 	"source": "ts",
-	"startLineNumber": 18,
-	"startColumn": 9,
-	"endLineNumber": 18,
-	"endColumn": 20,
-	"tags": [
-		1
-	],
-	"origin": "extHost1"
-}]
-
-
-[{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/QueueSidebar.tsx",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'Track' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 2,
-	"startColumn": 26,
-	"endLineNumber": 2,
-	"endColumn": 31,
-	"tags": [
-		1
-	],
-	"origin": "extHost1"
-},{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/QueueSidebar.tsx",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'formatTime' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 5,
-	"startColumn": 10,
-	"endLineNumber": 5,
-	"endColumn": 20,
-	"tags": [
-		1
-	],
-	"origin": "extHost1"
-},{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/QueueSidebar.tsx",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'Link' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 6,
-	"startColumn": 1,
-	"endLineNumber": 6,
-	"endColumn": 41,
-	"tags": [
-		1
-	],
-	"origin": "extHost1"
-}]
-
-
-[{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/QueueSidebar.tsx",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'formatTime' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 5,
-	"startColumn": 10,
-	"endLineNumber": 5,
-	"endColumn": 20,
-	"tags": [
-		1
-	],
-	"origin": "extHost1"
-}]
-
-[{
-	"resource": "/e:/SuperProject/apps/web/src/components/player/QueueSidebar.tsx",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'Link' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 6,
-	"startColumn": 1,
-	"endLineNumber": 6,
-	"endColumn": 41,
-	"tags": [
-		1
-	],
-	"origin": "extHost1"
-}]
-
-[{
-	"resource": "/e:/SuperProject/apps/web/src/stores/player.store.ts",
-	"owner": "typescript",
-	"code": "6133",
-	"severity": 4,
-	"message": "'isFromManual' is declared but its value is never read.",
-	"source": "ts",
-	"startLineNumber": 127,
-	"startColumn": 22,
-	"endLineNumber": 127,
-	"endColumn": 34,
-	"tags": [
-		1
-	],
+	"startLineNumber": 15,
+	"startColumn": 31,
+	"endLineNumber": 15,
+	"endColumn": 71,
 	"origin": "extHost1"
 }]

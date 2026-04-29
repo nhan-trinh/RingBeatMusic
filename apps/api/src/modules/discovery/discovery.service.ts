@@ -1,6 +1,17 @@
 import { prisma } from '../../shared/config/database';
 import { ListeningHistory } from '../player/player.model';
 
+const mapSong = (s: any) => ({
+  id: s.id,
+  title: s.title,
+  artistName: s.artist?.stageName || 'N/A',
+  artistId: s.artistId,
+  coverUrl: s.coverUrl,
+  audioUrl: s.audioUrl320 || s.audioUrl128 || '',
+  canvasUrl: s.canvasUrl,
+  duration: s.duration,
+});
+
 export const DiscoveryService = {
   // Lõi thuật toán gợi ý nhạc
   generateDiscoverWeekly: async (userId: string) => {
@@ -200,5 +211,105 @@ export const DiscoveryService = {
     }
 
     return recommendations;
+  },
+
+  // 4. Daily Mix (Mix giữa quen + mới, thay đổi hàng ngày)
+  getDailyMix: async (userId: string) => {
+    // Phân tích lịch sử 7 ngày
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const history = await ListeningHistory.find({ 
+      userId,
+      playedAt: { $gte: sevenDaysAgo } 
+    }).limit(200).lean();
+
+    const listenedSongIds = Array.from(new Set(history.map(h => h.songId)));
+    
+    // Tìm Genre nghe nhiều nhất
+    const genreCounts: Record<string, number> = {};
+    const listenedSongs = await prisma.song.findMany({
+      where: { id: { in: listenedSongIds } },
+      select: { genreId: true }
+    });
+    listenedSongs.forEach(s => { if(s.genreId) genreCounts[s.genreId] = (genreCounts[s.genreId] || 0) + 1; });
+    const topGenreId = Object.entries(genreCounts).sort((a,b) => b[1]-a[1])[0]?.[0];
+
+    // Lấy bài từ Artist đang follow
+    const followedArtists = await prisma.followedArtist.findMany({
+      where: { userId },
+      select: { artistId: true }
+    });
+    const followedArtistIds = followedArtists.map(a => a.artistId);
+
+    // Thuật toán mix
+    const mix: any[] = [];
+
+    // 40% - Genre yêu thích
+    if (topGenreId) {
+      const genreSongs = await prisma.song.findMany({
+        where: { genreId: topGenreId, status: 'APPROVED' },
+        orderBy: { playCount: 'desc' },
+        take: 8,
+        include: { artist: { select: { stageName: true } } }
+      });
+      mix.push(...genreSongs);
+    }
+
+    // 30% - Followed Artists
+    if (followedArtistIds.length > 0) {
+      const artistSongs = await prisma.song.findMany({
+        where: { artistId: { in: followedArtistIds }, status: 'APPROVED' },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+        include: { artist: { select: { stageName: true } } }
+      });
+      mix.push(...artistSongs);
+    }
+
+    // 30% - Trending & Random (để đủ 20 bài)
+    const fillCount = 20 - mix.length;
+    const trending = await prisma.song.findMany({
+      where: { status: 'APPROVED', id: { notIn: mix.map(m => m.id) } },
+      orderBy: { playCount: 'desc' },
+      take: fillCount,
+      include: { artist: { select: { stageName: true } } }
+    });
+    mix.push(...trending);
+
+    return mix.sort(() => Math.random() - 0.5).map(mapSong); // Shuffle & Map final mix
+  },
+
+  // 5. Gợi ý Album dựa trên bài hát đã thích
+  getRecommendedAlbums: async (userId: string) => {
+    const likedSongs = await prisma.likedSong.findMany({
+      where: { userId },
+      select: { song: { select: { albumId: true } } },
+      take: 20
+    });
+
+    const albumIds = Array.from(new Set(likedSongs.map(l => l.song.albumId).filter(Boolean))) as string[];
+    
+    return await prisma.album.findMany({
+      where: { id: { in: albumIds }, status: 'PUBLISHED' },
+      take: 6,
+      include: { artist: { select: { stageName: true } } }
+    });
+  },
+
+  // 6. Gợi ý Artist dựa trên genre hoặc artist đã follow
+  getRecommendedArtists: async (userId: string) => {
+    const followed = await prisma.followedArtist.findMany({
+      where: { userId },
+      select: { artistId: true }
+    });
+    const followedIds = followed.map(f => f.artistId);
+
+    // Tìm artist chưa follow
+    return await prisma.artist.findMany({
+      where: { id: { notIn: followedIds } },
+      take: 6,
+      select: { id: true, stageName: true, avatarUrl: true }
+    });
   }
 };

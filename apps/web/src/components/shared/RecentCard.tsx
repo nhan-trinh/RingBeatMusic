@@ -10,9 +10,10 @@ interface RecentCardProps {
   coverUrl: string;
   songs?: any[];
   isSong?: boolean;
+  type?: 'artist' | 'album' | 'playlist' | 'song';
 }
 
-export const RecentCard = ({ id, title, coverUrl, songs = [], isSong = false }: RecentCardProps) => {
+export const RecentCard = ({ id, title, coverUrl, songs = [], isSong = false, type = 'playlist' }: RecentCardProps) => {
   const { setContextAndPlay, currentContextId, isPlaying, togglePlay } = usePlayerStore();
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -31,9 +32,15 @@ export const RecentCard = ({ id, title, coverUrl, songs = [], isSong = false }: 
   };
 
   const handleCardClick = () => {
-    if (isSong) {
+    if (type === 'artist') {
+      navigate(`/artist/${id}`);
+    } else if (type === 'album') {
+      navigate(`/album/${id}`);
+    } else if (type === 'song') {
       if (songs.length > 0) {
         setContextAndPlay(songs, 0, id);
+      } else {
+        navigate(`/track/${id}`);
       }
     } else {
       navigate(`/playlist/${id}`);
@@ -48,7 +55,14 @@ export const RecentCard = ({ id, title, coverUrl, songs = [], isSong = false }: 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <img src={coverUrl} alt={title} className="w-12 h-12 md:w-16 md:h-16 object-cover shadow-[0_8px_24px_rgba(0,0,0,0.5)]" />
+      <img 
+        src={coverUrl} 
+        alt={title} 
+        className={cn(
+          "w-12 h-12 md:w-16 md:h-16 object-cover shadow-[0_8px_24px_rgba(0,0,0,0.5)]",
+          type === 'artist' ? "rounded-full p-2" : "rounded-none"
+        )} 
+      />
       
       <div className="flex-1 px-4 truncate">
         <h3 className="text-white font-bold text-[15px] truncate">{title}</h3>

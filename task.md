@@ -98,10 +98,10 @@ Dưới đây là tiến độ tổng quan của toàn bộ dự án dựa trên
   - [x] Fix Data Integrity: Hiển thị đúng số Followers thực tế từ DB.
   - [x] Advanced Queue System: Hàng đợi nhạc đầy đủ (Manual/Auto Queue, Drag & Drop).
 
-- [ ] **Phase 20: Cá nhân hóa Homepage**
-  - [ ] Tracking Logic: Ghi lại lịch sử tương tác (View Profile, Open Playlist/Album).
-  - [ ] Recently Visited & Listen Again: Hiển thị mục tương tác gần đây trên Home.
-  - [ ] Daily Mix & Discovery: Thuật toán gợi ý bài hát dựa trên sở thích.
+- [x] **Phase 20: Cá nhân hóa Homepage**
+  - [x] Tracking Logic: Ghi lại lịch sử tương tác (View Profile, Open Playlist/Album).
+  - [x] Recently Visited & Listen Again: Hiển thị mục tương tác gần đây trên Home.
+  - [x] Daily Mix & Discovery: Thuật toán gợi ý bài hát dựa trên sở thích.
 
 - [ ] **Phase 21: Trải nghiệm Nghe nhạc & Lyrics chuyên sâu**
   - [ ] LyricsPage & Karaoke: Trang lời bài hát riêng, chế độ Fullscreen Karaoke.
