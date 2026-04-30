@@ -16,14 +16,27 @@ import { useUIStore } from '../../stores/ui.store';
 import { useFriendStore } from '../../stores/friend.store';
 import { ReportModal } from '../shared/ReportModal';
 import { usePlayerStore } from '@/stores/player.store';
+import { useGlobalShortcuts } from '../../hooks/useGlobalShortcuts';
 
 export const MainLayout = () => {
+  useGlobalShortcuts();
   const { isAuthenticated } = useAuthStore();
   const { initialize: initNotifications, fetchNotifications } = useNotificationStore();
   const { initialize: initFriendActivity } = useFriendStore();
   const { currentTrack } = usePlayerStore();
-  const { isSidebarVisible, isNowPlayingVisible, isQueueVisible, isFriendActivityVisible } = useUIStore();
+  const { isSidebarVisible, isNowPlayingVisible, isQueueVisible, isFriendActivityVisible, setFullscreen } = useUIStore();
   const isRightSidebarVisible = (isNowPlayingVisible && !!currentTrack) || isQueueVisible || isFriendActivityVisible;
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [setFullscreen]);
 
   useEffect(() => {
     if (isAuthenticated) {

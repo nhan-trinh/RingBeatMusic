@@ -12,6 +12,7 @@ const mapSong = (s: any) => ({
   audioUrl: s.audioUrl320 || s.audioUrl128 || '',
   canvasUrl: s.canvasUrl,
   duration: s.duration,
+  hasLyrics: !!s.lyrics,
 });
 
 export const PlayerService = {
@@ -199,7 +200,10 @@ export const PlayerService = {
     // Fetch song data
     const songs = songIds.length > 0 ? await prisma.song.findMany({
       where: { id: { in: songIds } },
-      select: { id: true, title: true, coverUrl: true, artist: { select: { stageName: true } } }
+      select: { 
+        id: true, title: true, coverUrl: true, duration: true, audioUrl128: true, audioUrl320: true, canvasUrl: true, lyrics: true, artistId: true,
+        artist: { select: { stageName: true } } 
+      }
     }) : [];
 
     // Fetch album data
@@ -271,6 +275,7 @@ export const PlayerService = {
         audioUrl128: true,
         audioUrl320: true,
         canvasUrl: true,
+        lyrics: true,
         artistId: true,
         artist: { select: { stageName: true } }
       }

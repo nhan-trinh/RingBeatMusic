@@ -1,26 +1,21 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
 import { FastAverageColor } from 'fast-average-color';
-import { Play, Pause, Heart, Music2 } from 'lucide-react';
+import { Play, Pause, Heart } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { parseLRC, SyncedLyricLine } from '../../lib/lrc-parser';
 import { useInteractionTracker } from '../../hooks/useInteractionTracker';
 
 export const TrackPage = () => {
   const { id } = useParams();
 
   const [dominantColor, setDominantColor] = useState('#121212');
-  const [parsedLyrics, setParsedLyrics] = useState<SyncedLyricLine[]>([]);
 
-  const { setContextAndPlay, currentTrack, isPlaying, togglePlay, progress } = usePlayerStore();
+  const { setContextAndPlay, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isLiked, toggleLike } = useLibraryStore();
-
-  const activeLyricRef = useRef<HTMLParagraphElement>(null);
-  const lyricsContainerRef = useRef<HTMLDivElement>(null);
   
   // Tracking tương tác
   useInteractionTracker('SONG', id);
@@ -37,12 +32,6 @@ export const TrackPage = () => {
   // Hậu xử lý (Extract color & Parse lyrics) sau khi có data từ Cache hoặc Mạng
   useEffect(() => {
     if (!song) return;
-
-    if (song.lyrics) {
-      setParsedLyrics(parseLRC(song.lyrics));
-    } else {
-      setParsedLyrics([]);
-    }
 
     if (song.coverUrl) {
       const fac = new FastAverageColor();
@@ -64,37 +53,6 @@ export const TrackPage = () => {
   const isCurrentPlaying = currentTrack?.id === song?.id;
   const isVinylSpinning = isCurrentPlaying && isPlaying;
 
-  // Tính toán lời nhạc đang hát
-  let activeIndex = -1;
-  if (isCurrentPlaying && parsedLyrics.length > 0) {
-    for (let i = 0; i < parsedLyrics.length; i++) {
-      if (progress >= parsedLyrics[i].time) {
-        activeIndex = i;
-      } else {
-        break;
-      }
-    }
-  }
-
-  // Cuộn lời nhạc tự động mượt mà không làm nhảy màng hình chính
-  useEffect(() => {
-    if (activeIndex !== -1 && activeLyricRef.current && lyricsContainerRef.current) {
-      const container = lyricsContainerRef.current;
-      const element = activeLyricRef.current;
-
-      // Tính toán khoảng cách để đưa dòng lời nhạc ra giữa container
-      const offsetTop = element.offsetTop;
-      const containerHalfHeight = container.clientHeight / 2;
-      const elementHalfHeight = element.clientHeight / 2;
-      const scrollPosition = offsetTop - containerHalfHeight + elementHalfHeight;
-
-      container.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  }, [activeIndex]);
-
   const handlePlay = () => {
     if (currentTrack?.id === song.id) {
       togglePlay();
@@ -107,7 +65,8 @@ export const TrackPage = () => {
         coverUrl: song.coverUrl,
         audioUrl: song.audioUrl320 || song.audioUrl128,
         canvasUrl: song.canvasUrl,
-        duration: song.duration
+        duration: song.duration,
+        hasLyrics: !!song.lyrics
       };
       setContextAndPlay([track], 0, `track:${song.id}`);
     }
@@ -238,72 +197,7 @@ export const TrackPage = () => {
           </div>
         </div>
 
-        {/* =========================================
-            LỜI BÀI HÁT (SYNCED LYRICS KAREOKE)
-        =========================================== */}
-        <div className="w-full max-w-3xl flex-1 flex flex-col mb-16 px-4 shrink-0">
-          {parsedLyrics.length > 0 ? (
-            <div
-              ref={lyricsContainerRef}
-              className="w-full h-80 md:h-96 overflow-y-auto text-center space-y-6 md:space-y-8 pb-32 pt-16 mask-image-y relative scroll-smooth"
-              style={{
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
-                maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
-                scrollbarWidth: 'none'
-              }}
-            >
-              <style>{`.mask-image-y::-webkit-scrollbar { display: none; }`}</style>
-
-              {parsedLyrics.map((line, index) => {
-                const isActive = index === activeIndex;
-                const isPassed = index < activeIndex; // Lời đã qua
-
-                return (
-                  <p
-                    key={index}
-                    ref={isActive ? activeLyricRef : null}
-                    className={cn(
-                      "text-2xl md:text-4xl font-bold leading-tight transition-all duration-500 will-change-[transform,opacity]",
-                      isActive
-                        ? "text-white opacity-100 scale-105 drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]"
-                        : isPassed
-                          ? "text-white/40 opacity-40 scale-100 blur-[0.5px]"
-                          : "text-white/40 opacity-40 scale-100 hover:text-white/70 hover:opacity-70 cursor-pointer"
-                    )}
-                    onClick={() => {
-                      // (Optional) Tính năng nhấp vào lời nhạc để Seek đến thời gian đó
-                      if (isCurrentPlaying) {
-                        usePlayerStore.getState().seek(line.time);
-                      } else {
-                        handlePlay();
-                        // Lưu ý: Sau khi play thì phải chờ track load xong mới seek được, tạm thời bỏ qua phức tạp.
-                      }
-                    }}
-                  >
-                    {line.text || '♪'}
-                  </p>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="bg-white/5 border border-white/[0.05] p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center gap-4 backdrop-blur-xl shadow-2xl">
-              <Music2 size={48} className="text-white/20" />
-              {song.lyrics ? (
-                // Có Lời tĩnh
-                <div className="w-full max-h-96 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-                  <p className="text-lg md:text-xl font-medium text-white/70 leading-loose whitespace-pre-wrap font-sans transition-colors duration-300">
-                    {song.lyrics}
-                  </p>
-                </div>
-              ) : (
-                // Chửa có lời
-                <p className="text-[#b3b3b3] font-medium">Hiện chưa có lời cho bài hát này.</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Thêm khoảng trống padding dưới để không bj che bởi PlayerBar */}
+        {/* Thêm khoảng trống padding dưới để không bị che bởi PlayerBar */}
         <div className="h-12 shrink-0"></div>
       </div>
     </div>

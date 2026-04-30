@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { usePlayerStore } from '../../stores/player.store';
 import { useLibraryStore } from '../../stores/library.store';
 import { useUIStore } from '../../stores/ui.store';
@@ -12,8 +12,7 @@ import { cn } from '../../lib/utils';
 export const PlayerBar = () => {
   const { currentTrack, initPlayer } = usePlayerStore();
   const { isLiked, toggleLike } = useLibraryStore();
-  const { isNowPlayingVisible, toggleNowPlaying, setNowPlayingVisible, isQueueVisible, toggleQueue } = useUIStore();
-  const navigate = useNavigate();
+  const { isNowPlayingVisible, toggleNowPlaying, setNowPlayingVisible, isQueueVisible, toggleQueue, isFullscreen, toggleFullscreen } = useUIStore();
 
   // Tự động mở Sidebar khi phát nhạc mới
   useEffect(() => {
@@ -60,9 +59,10 @@ export const PlayerBar = () => {
         <PlaybackControls />
       </div>
 
-      {/* 3. Extra Controls (Bên phải - Thêm Volume và các Options) */}
+      {/* 3. Extra Controls (Bên phải) */}
       <div className="flex w-[30%] min-w-[280px] items-center justify-end gap-3 text-[#b3b3b3]">
         <Tooltip.Provider delayDuration={200}>
+          {/* Now Playing */}
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
               <button 
@@ -83,23 +83,29 @@ export const PlayerBar = () => {
             </Tooltip.Portal>
           </Tooltip.Root>
 
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button 
-                onClick={() => { if (currentTrack) navigate(`/track/${currentTrack.id}`) }}
-                className="hover:text-white transition-colors" 
-                disabled={!currentTrack}
-              >
-                <Mic2 size={16} />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Portal>
-              <Tooltip.Content className="bg-[#282828] text-white text-[12px] px-2 py-[6px] shadow-xl rounded font-medium z-[100]" sideOffset={8}>
-                Lời bài hát
-              </Tooltip.Content>
-            </Tooltip.Portal>
-          </Tooltip.Root>
+          {/* Lyrics - chỉ hiện khi bài hát có lời */}
+          {currentTrack?.hasLyrics && (
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <Link 
+                  to={`/lyrics/${currentTrack.id}`}
+                  className={cn(
+                    "hover:text-white transition-colors",
+                    window.location.pathname === `/lyrics/${currentTrack.id}` ? "text-[#1db954]" : ""
+                  )}
+                >
+                  <Mic2 size={16} />
+                </Link>
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Content className="bg-[#282828] text-white text-[12px] px-2 py-[6px] shadow-xl rounded font-medium z-[100]" sideOffset={8}>
+                  Lời bài hát
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          )}
 
+          {/* Queue */}
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
               <button 
@@ -120,6 +126,7 @@ export const PlayerBar = () => {
             </Tooltip.Portal>
           </Tooltip.Root>
 
+          {/* PiP */}
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
               <button className="hover:text-white transition-colors" disabled={!currentTrack}>
@@ -137,15 +144,20 @@ export const PlayerBar = () => {
         <VolumeControl />
 
         <Tooltip.Provider delayDuration={200}>
+          {/* Fullscreen */}
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
-              <button className="hover:text-white transition-colors" disabled={!currentTrack}>
+              <button 
+                className={cn("transition-colors", isFullscreen ? "text-[#1DB954]" : "hover:text-white")} 
+                disabled={!currentTrack}
+                onClick={toggleFullscreen}
+              >
                 <Maximize2 size={16} />
               </button>
             </Tooltip.Trigger>
             <Tooltip.Portal>
               <Tooltip.Content className="bg-[#282828] text-white text-[12px] px-2 py-[6px] shadow-xl rounded font-medium z-[100]" sideOffset={8}>
-                Toàn màn hình
+                {isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
               </Tooltip.Content>
             </Tooltip.Portal>
           </Tooltip.Root>

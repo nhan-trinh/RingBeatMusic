@@ -96,6 +96,7 @@ export const AlbumPage = () => {
     audioUrl: song.audioUrl320 || song.audioUrl128 || '',
     canvasUrl: song.canvasUrl,
     duration: song.duration,
+    hasLyrics: !!song.lyrics,
   }));
 
   const isThisPlaying = currentContextId === id && isPlaying;

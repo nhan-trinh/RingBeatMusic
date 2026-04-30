@@ -13,6 +13,7 @@ export interface Track {
   audioUrl: string;
   canvasUrl?: string;
   duration: number; // in seconds
+  hasLyrics?: boolean;
 }
 
 interface PlayerState {

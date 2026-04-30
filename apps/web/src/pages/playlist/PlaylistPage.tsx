@@ -115,6 +115,7 @@ export const PlaylistPage = () => {
     audioUrl: ps.song.audioUrl320 || ps.song.audioUrl128 || '',
     canvasUrl: ps.song.canvasUrl,
     duration: ps.song.duration,
+    hasLyrics: !!ps.song.lyrics,
   }));
 
   const handleMainPlay = () => {

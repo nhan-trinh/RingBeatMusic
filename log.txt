@@ -1,41 +1,149 @@
 [{
-	"resource": "/e:/SuperProject/apps/api/src/modules/player/player.service.ts",
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/CTASection.tsx",
 	"owner": "typescript",
-	"code": "2353",
+	"code": "2307",
 	"severity": 8,
-	"message": "Object literal may only specify known properties, and 'user' does not exist in type 'PlaylistSelect<DefaultArgs>'.",
+	"message": "Cannot find module 'framer-motion' or its corresponding type declarations.",
 	"source": "ts",
-	"startLineNumber": 209,
-	"startColumn": 56,
-	"endLineNumber": 209,
-	"endColumn": 60,
+	"startLineNumber": 2,
+	"startColumn": 24,
+	"endLineNumber": 2,
+	"endColumn": 39,
 	"origin": "extHost1"
 }]
 
 [{
-	"resource": "/e:/SuperProject/apps/api/src/modules/player/player.service.ts",
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/FeaturesSection.tsx",
 	"owner": "typescript",
-	"code": "2339",
+	"code": "2307",
 	"severity": 8,
-	"message": "Property 'user' does not exist on type '{ id: string; updatedAt: Date; description: string | null; title: string; coverUrl: string | null; createdAt: Date; ownerId: string | null; isPublic: boolean; isSystem: boolean; isFeatured: boolean; isPinned: boolean; isCollaborative: boolean; }'.",
+	"message": "Cannot find module 'framer-motion' or its corresponding type declarations.",
 	"source": "ts",
-	"startLineNumber": 217,
-	"startColumn": 98,
-	"endLineNumber": 217,
-	"endColumn": 102,
+	"startLineNumber": 2,
+	"startColumn": 24,
+	"endLineNumber": 2,
+	"endColumn": 39,
 	"origin": "extHost1"
-}]
-
-[{
-	"resource": "/e:/SuperProject/apps/api/src/modules/home/home.controller.ts",
+},{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/FeaturesSection.tsx",
 	"owner": "typescript",
-	"code": "7030",
+	"code": "6133",
 	"severity": 4,
-	"message": "Not all code paths return a value.",
+	"message": "'Link' is declared but its value is never read.",
 	"source": "ts",
-	"startLineNumber": 15,
+	"startLineNumber": 1,
+	"startColumn": 1,
+	"endLineNumber": 1,
+	"endColumn": 41,
+	"tags": [
+		1
+	],
+	"origin": "extHost1"
+}]
+
+[{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/LandingNavbar.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module 'framer-motion' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 2,
+	"startColumn": 24,
+	"endLineNumber": 2,
+	"endColumn": 39,
+	"origin": "extHost1"
+}]
+
+[{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/LandingPage.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module 'framer-motion' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 3,
+	"startColumn": 24,
+	"endLineNumber": 3,
+	"endColumn": 39,
+	"origin": "extHost1"
+},{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/LandingPage.tsx",
+	"owner": "typescript",
+	"code": "6133",
+	"severity": 4,
+	"message": "'useRef' is declared but its value is never read.",
+	"source": "ts",
+	"startLineNumber": 1,
 	"startColumn": 31,
-	"endLineNumber": 15,
-	"endColumn": 71,
+	"endLineNumber": 1,
+	"endColumn": 37,
+	"tags": [
+		1
+	],
+	"origin": "extHost1"
+}]
+
+[{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/ConcertoModel.tsx",
+	"owner": "typescript",
+	"code": "6133",
+	"severity": 4,
+	"message": "'state' is declared but its value is never read.",
+	"source": "ts",
+	"startLineNumber": 10,
+	"startColumn": 13,
+	"endLineNumber": 10,
+	"endColumn": 18,
+	"tags": [
+		1
+	],
+	"origin": "extHost1"
+}]
+
+[{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/Scene3D.tsx",
+	"owner": "typescript",
+	"code": "6133",
+	"severity": 4,
+	"message": "'useRef' is declared but its value is never read.",
+	"source": "ts",
+	"startLineNumber": 1,
+	"startColumn": 20,
+	"endLineNumber": 1,
+	"endColumn": 26,
+	"tags": [
+		1
+	],
+	"origin": "extHost1"
+},{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/Scene3D.tsx",
+	"owner": "typescript",
+	"code": "6133",
+	"severity": 4,
+	"message": "'useState' is declared but its value is never read.",
+	"source": "ts",
+	"startLineNumber": 1,
+	"startColumn": 28,
+	"endLineNumber": 1,
+	"endColumn": 36,
+	"tags": [
+		1
+	],
+	"origin": "extHost1"
+},{
+	"resource": "/e:/SuperProject/apps/web/src/pages/landing/components/Scene3D.tsx",
+	"owner": "typescript",
+	"code": "6133",
+	"severity": 4,
+	"message": "'useEffect' is declared but its value is never read.",
+	"source": "ts",
+	"startLineNumber": 1,
+	"startColumn": 38,
+	"endLineNumber": 1,
+	"endColumn": 47,
+	"tags": [
+		1
+	],
 	"origin": "extHost1"
 }]

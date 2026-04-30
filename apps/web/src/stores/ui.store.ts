@@ -7,6 +7,7 @@ interface UIState {
   isFriendActivityVisible: boolean;
   reportTarget: { id: string; type: 'SONG' | 'PLAYLIST' | 'USER'; title: string } | null;
   isQueueVisible: boolean;
+  isFullscreen: boolean;
   toggleNowPlaying: () => void;
   setNowPlayingVisible: (visible: boolean) => void;
   toggleQueue: () => void;
@@ -15,6 +16,8 @@ interface UIState {
   setSidebarVisible: (visible: boolean) => void;
   toggleFriendActivity: () => void;
   setFriendActivityVisible: (visible: boolean) => void;
+  toggleFullscreen: () => void;
+  setFullscreen: (isFullscreen: boolean) => void;
   openReportModal: (id: string, type: 'SONG' | 'PLAYLIST' | 'USER', title: string) => void;
   closeReportModal: () => void;
 }
@@ -26,6 +29,7 @@ export const useUIStore = create<UIState>()(
       isSidebarVisible: true,
       isFriendActivityVisible: false,
       isQueueVisible: false,
+      isFullscreen: false,
       reportTarget: null,
       toggleNowPlaying: () => set((state) => ({ 
         isNowPlayingVisible: !state.isNowPlayingVisible,
@@ -53,6 +57,17 @@ export const useUIStore = create<UIState>()(
         isQueueVisible: false
       })),
       setFriendActivityVisible: (visible) => set({ isFriendActivityVisible: visible }),
+      toggleFullscreen: () => {
+        const isCurrentlyFull = !!document.fullscreenElement;
+        if (!isCurrentlyFull) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.error(`Lỗi bật Fullscreen: ${err.message}`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      },
+      setFullscreen: (isFullscreen) => set({ isFullscreen }),
       openReportModal: (id, type, title) => set({ reportTarget: { id, type, title } }),
       closeReportModal: () => set({ reportTarget: null }),
     }),

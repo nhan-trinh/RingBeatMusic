@@ -11,7 +11,7 @@ export const ArtistService = {
           where: { status: 'APPROVED' },
           select: { 
             id: true, title: true, playCount: true, coverUrl: true, 
-            audioUrl320: true, audioUrl128: true, canvasUrl: true, 
+            audioUrl320: true, audioUrl128: true, canvasUrl: true, lyrics: true,
             duration: true, artistId: true, 
             artist: { select: { id: true, stageName: true } } 
           },

@@ -10,6 +10,7 @@ const mapSong = (s: any) => ({
   audioUrl: s.audioUrl320 || s.audioUrl128 || '',
   canvasUrl: s.canvasUrl,
   duration: s.duration,
+  hasLyrics: !!s.lyrics,
 });
 
 export const DiscoveryService = {

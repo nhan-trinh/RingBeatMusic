@@ -14,6 +14,7 @@ import { SearchPage } from './pages/search/SearchPage';
 import { PlaylistPage } from './pages/playlist/PlaylistPage';
 import { ArtistPage } from './pages/artist/ArtistPage';
 import { TrackPage } from './pages/track/TrackPage';
+import { LyricsPage } from './pages/lyrics/LyricsPage';
 import { LibraryPage } from './pages/library/LibraryPage';
 import { AlbumPage } from './pages/album/AlbumPage';
 import { ArtistDashboardLayout } from './pages/artist-dashboard/ArtistDashboardLayout';
@@ -108,6 +109,7 @@ function App() {
           <Route path="/profile/:id" element={<ProfilePage />} />
           <Route path="/settings" element={<AccountSettingsPage />} />
           <Route path="/section/:id" element={<SectionPage />} />
+          <Route path="/lyrics/:id" element={<LyricsPage />} />
           <Route path="/song/:id" element={<Navigate to="/track/:id" replace />} />
         </Route>
 

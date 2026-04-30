@@ -47,7 +47,7 @@ export const PlaylistService = {
           orderBy: { position: 'asc' },
           include: {
             song: {
-              select: { id: true, title: true, duration: true, playCount: true, coverUrl: true, canvasUrl: true, audioUrl320: true, audioUrl128: true, artistId: true, artist: { select: { id: true, stageName: true } } }
+              select: { id: true, title: true, duration: true, playCount: true, coverUrl: true, canvasUrl: true, audioUrl320: true, audioUrl128: true, lyrics: true, artistId: true, artist: { select: { id: true, stageName: true } } }
             },
             addedByUser: { select: { id: true, name: true, avatarUrl: true } }
           }

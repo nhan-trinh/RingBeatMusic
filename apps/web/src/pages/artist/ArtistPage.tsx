@@ -93,6 +93,7 @@ export const ArtistPage = () => {
     audioUrl: item.song.audioUrl320 || item.song.audioUrl128,
     canvasUrl: item.song.canvasUrl,
     duration: item.song.duration,
+    hasLyrics: !!item.song.lyrics,
   }));
 
   const handleMainPlay = () => {
