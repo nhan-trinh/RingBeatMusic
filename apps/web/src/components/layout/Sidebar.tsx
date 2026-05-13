@@ -90,8 +90,8 @@ export const Sidebar = ({ className }: { className?: string }) => {
   }, []);
 
   const navItems = [
-    { label: 'TRANG_CHỦ', path: '/', icon: Home, index: '01' },
-    { label: 'TÌM_KIẾM', path: '/search', icon: Search, index: '02' },
+    { label: 'CORE_TERMINAL', path: '/', icon: Home, index: '01' },
+    { label: 'SEARCH_ENGINE', path: '/search', icon: Search, index: '02' },
   ];
 
   const hasItems = likedSongs.length > 0 || followedArtists.length > 0 || playlists.length > 0;

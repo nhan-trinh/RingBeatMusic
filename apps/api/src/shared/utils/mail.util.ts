@@ -55,7 +55,7 @@ class MailUtility {
     }
   }
 
-  async sendOTP(email: string, otp: string, context: 'Đăng Ký' | 'Quên Mật Khẩu' = 'Đăng Ký'): Promise<boolean> {
+  async sendOTP(email: string, otp: string, context: 'Đăng Ký' | 'Quên Mật Khẩu' | 'Xóa Tài Khoản' = 'Đăng Ký'): Promise<boolean> {
     const subject = `[RingBeat Music] Mã OTP ${context}`;
     const text = `Mã OTP của bạn là: ${otp}. Vui lòng không chia sẻ mã này. Mã có hiệu lực 10 phút.`;
     const html = `

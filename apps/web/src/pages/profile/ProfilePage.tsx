@@ -86,6 +86,13 @@ export const ProfilePage = () => {
       {/* ── Texture Overlay ── */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay z-50 bg-noise" />
 
+      {/* ── GIANT BACKGROUND LABEL (EDITORIAL) ── */}
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none z-0 overflow-hidden w-full text-center">
+        <span className="text-[20vw] md:text-[25vw] font-black text-white/[0.02] tracking-tighter uppercase leading-none italic block">
+          {profile.name}
+        </span>
+      </div>
+
       <div className="px-6 lg:px-12 pt-24 pb-32 relative z-10 w-full max-w-screen-2xl mx-auto">
 
         {/* ── IDENTITY MANIFEST (HEADER) ── */}

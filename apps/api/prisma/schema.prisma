@@ -105,6 +105,8 @@ enum AuditAction {
   REPORT_RESOLVED
   ROLE_CHANGED
   CONFIG_UPDATED
+  SESSION_REVOKED   // Remote logout
+  ACCOUNT_DELETED   // User self-deleted
 }
 
 // =============================================
@@ -130,6 +132,9 @@ model User {
   googleId         String?   @unique
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([deletedAt])
 
   // Relations
   subscription       Subscription?
@@ -151,6 +156,9 @@ model User {
   invoices           Invoice[]
   addedSongs         PlaylistSong[]
   collaboratedPlaylists PlaylistCollaborator[]
+
+  // Session Management (Phase 23)
+  sessions UserSession[]
 
   // Social (Phase 16)
   following UserFollow[] @relation("Following")
@@ -518,6 +526,37 @@ model SystemConfig {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// =============================================
+// Session Management (Phase 23)
+// =============================================
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Security: lưu SHA-256 hash, không bao giờ lưu token gốc
+  tokenHash    String   @unique
+
+  // Device metadata (parsed từ User-Agent)
+  deviceName   String?  // "Chrome on Windows"
+  deviceType   String?  // "desktop" | "mobile" | "tablet"
+  os           String?  // "Windows 11"
+  browser      String?  // "Chrome 124"
+  ipAddress    String?
+
+  // Lifecycle
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+
+  // Tối ưu query: lấy sessions active của 1 user
+  @@index([userId, isRevoked])
+  // Tối ưu query: lookup bằng tokenHash khi refresh
+  @@index([tokenHash])
 }
 
 // =============================================

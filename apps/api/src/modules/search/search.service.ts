@@ -306,4 +306,27 @@ export const SearchService = {
 
     await meilisearch.index('songs').addDocuments([doc]);
   },
+
+  // 5. Đồng bộ lẻ 1 Album
+  syncOneAlbum: async (albumId: string) => {
+    const album = await prisma.album.findUnique({
+      where: { id: albumId },
+      include: { artist: { select: { stageName: true } } }
+    });
+
+    if (!album || album.status !== 'PUBLISHED') {
+      await meilisearch.index('albums').deleteDocument(albumId);
+      return;
+    }
+
+    const doc = {
+      id: album.id,
+      title: album.title,
+      artistName: album.artist.stageName,
+      coverUrl: album.coverUrl || '',
+      releaseDate: album.releaseDate?.getTime() || 0,
+    };
+
+    await meilisearch.index('albums').addDocuments([doc]);
+  },
 };

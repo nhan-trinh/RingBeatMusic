@@ -58,3 +58,17 @@ export const verify2FASchema = z.object({
     token: z.string().length(6, 'Mã TOTP phải gồm 6 chữ số'),
   }),
 });
+
+export const confirmDeleteAccountSchema = z.object({
+  body: z.object({
+    code: z.string().length(6, 'Mã OTP phải đủ 6 chữ số'),
+  }),
+});
+
+export const resolveDeviceLimitSchema = z.object({
+  body: z.object({
+    actionToken: z.string().min(1, 'Action token là bắt buộc'),
+    sessionId: z.string().uuid('sessionId không hợp lệ'),
+  }),
+});
+

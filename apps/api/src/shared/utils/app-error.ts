@@ -31,6 +31,12 @@ export const ErrorCodes = {
   ACCOUNT_BANNED: 'ACCOUNT_BANNED',
   BAD_REQUEST: 'BAD_REQUEST',
 
+  // Session Management
+  DEVICE_LIMIT_EXCEEDED: 'DEVICE_LIMIT_EXCEEDED', // User đạt giới hạn 5 thiết bị
+  SESSION_REVOKED: 'SESSION_REVOKED',             // Session đã bị revoke từ xa
+  SESSION_NOT_FOUND: 'SESSION_NOT_FOUND',         // Không tìm thấy session
+  ACTION_TOKEN_INVALID: 'ACTION_TOKEN_INVALID',   // Action token sai/hết hạn
+
   // Resource
   NOT_FOUND: 'NOT_FOUND',
   ALREADY_EXISTS: 'ALREADY_EXISTS',
@@ -40,3 +46,4 @@ export const ErrorCodes = {
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
 } as const;
+

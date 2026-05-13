@@ -11,6 +11,7 @@ import { Label } from '../../components/ui/label';
 import { Icons } from '../../components/ui/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Fingerprint, Zap, Loader2, Activity, Database, Globe, ChevronLeft } from 'lucide-react';
+import { DeviceLimitModal } from '../../components/auth/DeviceLimitModal';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Vui lòng nhập email.').email('Email không hợp lệ.'),
@@ -29,6 +30,12 @@ export const LoginPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Device Limit state
+  const [deviceLimitData, setDeviceLimitData] = useState<{
+    actionToken: string;
+    sessions: any[];
+  } | null>(null);
 
   const from = location.state?.from?.pathname || '/';
 
@@ -84,11 +91,15 @@ export const LoginPage = () => {
     loginMutation.mutate(data, {
       onSuccess: () => {
         setIsActivated(true);
-        setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 1500);
+        setTimeout(() => navigate(from, { replace: true }), 1500);
       },
       onError: (error: any) => {
+        // Xử lý đặc biệt: DEVICE_LIMIT_EXCEEDED — hiện modal chọn thiết bị kick
+        if (error.response?.status === 409 && error.response?.data?.code === 'DEVICE_LIMIT_EXCEEDED') {
+          const { actionToken, sessions } = error.response.data.data;
+          setDeviceLimitData({ actionToken, sessions });
+          return;
+        }
         setErrorMsg(error.response?.data?.error?.message || 'AUTHENTICATION_FAILED: Key mismatched or signal corrupted.');
       },
     });
@@ -100,6 +111,19 @@ export const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-black text-white relative overflow-hidden selection:bg-[#1db954] selection:text-black font-sans">
+      {/* Device Limit Modal */}
+      {deviceLimitData && (
+        <DeviceLimitModal
+          actionToken={deviceLimitData.actionToken}
+          sessions={deviceLimitData.sessions}
+          onSuccess={() => {
+            setDeviceLimitData(null);
+            setIsActivated(true);
+            setTimeout(() => navigate(from, { replace: true }), 1500);
+          }}
+          onCancel={() => setDeviceLimitData(null)}
+        />
+      )}
       {/* ── Noise Texture Overlay ── */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay z-0 bg-noise" />
 

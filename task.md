@@ -114,7 +114,14 @@ Dưới đây là tiến độ tổng quan của toàn bộ dự án dựa trên
   - [x] Library Upgrade: Menu chuột phải LeftBar, ghim (Pin) playlist.
 
 - [ ] **Phase 23: Settings & Hệ thống Tài khoản (Advanced)**
-  - [ ] Account Management: Xóa tài khoản vĩnh viễn (Confirm code).
-  - [ ] Session Control: Danh sách thiết bị đang đăng nhập & Đăng xuất từ xa.
+  - [x] Account Management: Xóa tài khoản vĩnh viễn (Confirm code).
+  - [x] Session Control: Danh sách thiết bị đang đăng nhập & Đăng xuất từ xa.
   - [ ] Privacy & Telemetry: Toggle Profile công khai, Ẩn/Hiện lịch sử nghe nhạc.
   - [ ] Notification System: Tùy chỉnh thông báo Activity (Follow, Playlist update).
+
+- [ ] **Phase 24: Trending & Real-time Analytics (Daily Sync Peak)**
+  - [ ] Tracking lượt nghe (access) theo ngày sử dụng Redis Sorted Sets.
+  - [ ] Xây dựng thuật toán lọc Top 10-15 bài hát có lượt nghe >= 100 trong ngày.
+  - [ ] Hiển thị mục "Bài hát được nghe nhiều nhất hôm nay" trên Homepage (DAILY_SYNC_PEAK).
+  - [ ] Tối ưu hiệu năng bằng TTL (48h) và Caching.
+

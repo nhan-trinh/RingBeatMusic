@@ -38,6 +38,7 @@
     "qrcode": "^1.5.4",
     "socket.io": "^4.7.5",
     "speakeasy": "^2.0.0",
+    "ua-parser-js": "^2.0.9",
     "winston": "^3.13.0",
     "zod": "^3.23.8"
   },
@@ -57,6 +58,7 @@
     "@types/nodemailer": "^6.4.15",
     "@types/qrcode": "^1.5.6",
     "@types/speakeasy": "^2.0.10",
+    "@types/ua-parser-js": "^0.7.39",
     "prisma": "^5.14.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

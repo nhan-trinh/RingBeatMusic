@@ -1,13 +1,14 @@
 import { prisma } from '../../shared/config/database';
 import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { SupabaseUtil } from '../../shared/utils/supabase.util';
+import { SearchService } from '../search/search.service';
 
 export const AlbumService = {
   createAlbum: async (userId: string, data: any) => {
     const artist = await prisma.artist.findUnique({ where: { userId } });
     if (!artist) throw new AppError('Bạn không phải là nghệ sĩ', 403, ErrorCodes.FORBIDDEN);
 
-    return await prisma.album.create({
+    const newAlbum = await prisma.album.create({
       data: {
         title: data.title,
         coverUrl: data.coverUrl || null,
@@ -17,6 +18,9 @@ export const AlbumService = {
         status: 'PUBLISHED',
       },
     });
+
+    await SearchService.syncOneAlbum(newAlbum.id);
+    return newAlbum;
   },
 
   getAlbum: async (albumId: string) => {
@@ -57,10 +61,13 @@ export const AlbumService = {
       throw new AppError('Album không tồn tại hoặc không thuộc quyền sở hữu', 403, ErrorCodes.FORBIDDEN);
     }
 
-    return await prisma.album.update({
+    const updatedAlbum = await prisma.album.update({
       where: { id: albumId },
       data,
     });
+
+    await SearchService.syncOneAlbum(albumId);
+    return updatedAlbum;
   },
 
   deleteAlbum: async (userId: string, albumId: string) => {
@@ -76,6 +83,10 @@ export const AlbumService = {
     }
 
     await prisma.album.delete({ where: { id: albumId } });
+    
+    // Đồng bộ: Xóa khỏi Meilisearch (vì không còn trong db -> syncOneAlbum sẽ xóa)
+    await SearchService.syncOneAlbum(albumId);
+    
     return { message: 'Đã xóa album thành công' };
   },
 
@@ -93,6 +104,8 @@ export const AlbumService = {
     const coverUrl = await SupabaseUtil.uploadBuffer('images', filePath, file.buffer, file.mimetype);
 
     await prisma.album.update({ where: { id: albumId }, data: { coverUrl } });
+    
+    await SearchService.syncOneAlbum(albumId);
     return { coverUrl };
   },
 

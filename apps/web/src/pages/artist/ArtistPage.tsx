@@ -9,6 +9,7 @@ import { formatTime, cn } from '../../lib/utils';
 import { useInteractionTracker } from '../../hooks/useInteractionTracker';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
+import { MediaCard } from '../../components/shared/MediaCard';
 
 // ─── Decoration Components ──────────────────────────────────────────────────
 const Crosshair = ({ className }: { className?: string }) => (
@@ -266,7 +267,7 @@ export const ArtistPage = () => {
                   </div>
                </div>
 
-               <div className="flex flex-col gap-px bg-white/10 border border-white/10">
+               <div className="flex flex-col gap-px ">
                   {artist.songs.map((item: any, index: number) => {
                      const track = item.song;
                      const isRowPlaying = currentContextId === id && currentTrack?.id === track.id;
@@ -282,7 +283,7 @@ export const ArtistPage = () => {
                            transition={{ delay: index * 0.05 }}
                            whileHover={{ x: 12, backgroundColor: 'rgba(255, 255, 255, 0.02)' }}
                            className={cn(
-                              "group grid grid-cols-[80px_1fr_120px_100px] gap-8 items-center px-10 py-8 bg-black transition-all cursor-pointer relative overflow-hidden border-b border-white/5",
+                              "group grid grid-cols-[60px_1fr_200px_120px] gap-8 items-center px-8 py-6 bg-black transition-all cursor-pointer relative overflow-hidden border-b border-white/5",
                               isRowPlaying && "bg-white/[0.04]"
                            )}
                         >
@@ -355,6 +356,34 @@ export const ArtistPage = () => {
                   })}
                </div>
             </section>
+
+            {/* ── DISCOGRAPHY SECTION (Albums) ── */}
+            {artist.albums && artist.albums.length > 0 && (
+               <section className="relative mt-32">
+                  <div className="flex items-center justify-between mb-16 border-b border-white/10 pb-8 relative">
+                     <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                           <span className="text-[9px] font-black text-[#1db954] uppercase tracking-widest px-3 py-1 border border-[#1db954]/20">COLLECTION_MANIFEST_02</span>
+                           <div className="w-16 h-[1px] bg-white/10" />
+                        </div>
+                        <h2 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tighter italic leading-none">Studio_Records</h2>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8">
+                     {artist.albums.map((album: any) => (
+                        <MediaCard
+                           key={album.id}
+                           id={album.id}
+                           title={album.title}
+                           subtitle={`ALBUM // ${new Date(album.releaseDate).getFullYear()}`}
+                           coverUrl={album.coverUrl}
+                           type="album"
+                        />
+                     ))}
+                  </div>
+               </section>
+            )}
 
             {/* ── SYSTEM STATUS FOOTER ── */}
             <footer className="mt-48 pt-16 border-t-2 border-white/10 opacity-20 relative overflow-hidden group/footer">
