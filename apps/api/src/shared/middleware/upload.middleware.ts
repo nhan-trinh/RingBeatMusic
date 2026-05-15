@@ -37,3 +37,20 @@ export const uploadAudio = multer({
     fileSize: 50 * 1024 * 1024, // Giới hạn 50MB cho âm thanh
   },
 });
+
+// Filter cho video (Hero Background)
+const videoFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype.startsWith('video/')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Chỉ hỗ trợ upload file video (mp4, webm)', 400, ErrorCodes.VALIDATION_ERROR));
+  }
+};
+
+export const uploadVideo = multer({
+  storage,
+  fileFilter: videoFilter,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // Giới hạn 100MB cho video
+  },
+});

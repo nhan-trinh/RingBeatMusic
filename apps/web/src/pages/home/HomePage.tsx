@@ -5,7 +5,9 @@ import { MediaCard } from '../../components/shared/MediaCard';
 import { RecentCard } from '../../components/shared/RecentCard';
 import { MediaCarousel } from '../../components/shared/MediaCarousel';
 import { Link } from 'react-router-dom';
-import { Cpu, Database, Zap, Activity, Shield, Globe, Box } from 'lucide-react';
+import { Cpu, Database, Zap, Activity, Shield, Globe, Box, Terminal } from 'lucide-react';
+import vBg from '../../assets/HERO-SECTION-BGDEMO.mp4';
+import { useHeroConfig } from '../../hooks/useHeroConfig';
 
 // ─── Decoration Components ──────────────────────────────────────────────────
 const Crosshair = ({ className }: { className?: string }) => (
@@ -29,6 +31,8 @@ const TechnicalStrip = () => (
 );
 
 export const HomePage = () => {
+  const { data: heroConfig, isLoading: isHeroLoading } = useHeroConfig();
+
   const { data: feedData } = useQuery({
     queryKey: ['homeFeed'],
     queryFn: async () => {
@@ -83,31 +87,90 @@ export const HomePage = () => {
       <div className="px-6 lg:px-12 pt-8 pb-32 relative z-10 w-full max-w-screen-2xl mx-auto">
         <TechnicalStrip />
 
-        {/* ── HERO SECTION (Ultra-Redesigned) ── */}
-        <section className="mt-16 mb-24 relative group">
-          <Crosshair className="-top-4 -left-4" />
-          <Crosshair className="-top-4 -right-4" />
+        {/* ── HERO SECTION (Ultra-Redesigned with Video Background) ── */}
+        <section className="mt-8 mb-24 relative group overflow-hidden border border-white/5">
+          {/* Background Video Layer */}
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            {isHeroLoading ? (
+              <div className="w-full h-full bg-[#111] animate-pulse" />
+            ) : heroConfig?.backgroundType === 'image' && heroConfig?.backgroundUrl ? (
+              <img 
+                src={heroConfig.backgroundUrl}
+                alt="Hero Background"
+                className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
+              />
+            ) : (
+              <video 
+                autoPlay 
+                muted 
+                loop 
+                playsInline 
+                className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
+              >
+                <source src={heroConfig?.backgroundUrl || vBg} type="video/mp4" />
+              </video>
+            )}
+            
+            {/* Brutalist Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10" />
+            <div className="absolute inset-0 bg-[radial-gradient(transparent_1px,#000_1px)] [background-size:4px_4px] opacity-30 z-20" />
+            <div className="absolute inset-0 border-[20px] border-black z-30 pointer-events-none opacity-40" />
+          </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 border-b border-white/10 pb-16 relative">
-            <div className="space-y-8">
-              <div className="flex items-center gap-3">
-                <div className="px-2 py-0.5 bg-[#1db954] text-black text-[8px] font-black uppercase tracking-[0.4em]">STATUS: AUTH_VERIFIED</div>
-                <span className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 italic">// ACCESS_POINT: B-09</span>
+          <div className="relative z-40 px-8 lg:px-16 py-20 lg:py-32">
+            <Crosshair className="top-4 left-4" />
+            <Crosshair className="bottom-4 right-4" />
+
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 relative">
+              <div className="space-y-10">
+                <div className="flex items-center gap-4">
+                  <div className="px-3 py-1 bg-[#1db954] text-black text-[9px] font-black uppercase tracking-[0.4em] flex items-center gap-2">
+                    <Terminal size={10} />
+                    LIVE_FEED: ACTIVE
+                  </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-1 h-3 bg-[#1db954]/40 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white uppercase tracking-tighter leading-[0.8] italic transition-all duration-1000 group-hover:tracking-normal group-hover:text-[#1db954]">
+                    {greeting}
+                  </h1>
+                  <div className="flex items-center gap-4 opacity-50">
+                    <div className="h-[1px] w-24 bg-white" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.5em]">System_Identity_Verified</span>
+                  </div>
+                </div>
+
+                <p className="max-w-xl text-white/50 text-[12px] font-black uppercase tracking-[0.2em] leading-relaxed italic border-l-4 border-[#1db954] pl-8 py-4 bg-black/40 backdrop-blur-sm">
+                  Truy cập vào hệ thống âm thanh tần số cao. Dữ liệu telemetry cho thấy tín hiệu ổn định trên toàn bộ các node thứ cấp. Sẵn sàng truyền phát tín hiệu đồng bộ.
+                </p>
+                
+                <div className="flex items-center gap-8">
+                   <button className="px-8 py-4 bg-white text-black font-black uppercase tracking-[0.4em] text-[10px] hover:bg-[#1db954] hover:text-black transition-all shadow-[8px_8px_0px_rgba(255,255,255,0.1)] active:translate-x-1 active:translate-y-1 active:shadow-none">
+                     SYNCHRONIZE_NOW
+                   </button>
+                   <div className="flex flex-col gap-1">
+                      <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">Latency: 14ms</span>
+                      <span className="text-[7px] font-black text-[#1db954] uppercase tracking-widest">Signal: Excellent</span>
+                   </div>
+                </div>
               </div>
 
-              <h1 className="text-6xl md:text-6xl lg:text-8xl font-black text-white uppercase tracking-tighter leading-[0.8] italic transition-all duration-700 group-hover:tracking-normal">
-                {greeting}
-              </h1>
-
-              <p className="max-w-xl text-white/30 text-[11px] font-black uppercase tracking-[0.3em] leading-relaxed italic border-l-2 border-[#1db954] pl-6 py-2">
-                Initializing daily signal stream. Telemetry data indicates optimal broadcast conditions across all secondary nodes.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-10 lg:gap-16 opacity-30 group-hover:opacity-100 transition-all duration-700">
-              <TechnicalReadout icon={Cpu} label="System_Core" value="Stable_v4.2" />
-              <TechnicalReadout icon={Globe} label="Access_Point" value="Node_Primary" />
-              <TechnicalReadout icon={Shield} label="Security" value="Encrypted_S2" />
+              <div className="flex flex-col gap-8 opacity-20 group-hover:opacity-60 transition-all duration-1000 border-l border-white/10 pl-12 hidden lg:flex">
+                <TechnicalReadout icon={Cpu} label="System_Core" value="Stable_v4.2" />
+                <TechnicalReadout icon={Globe} label="Access_Point" value="Node_Primary" />
+                <TechnicalReadout icon={Shield} label="Security" value="Encrypted_S2" />
+                <div className="mt-4 pt-4 border-t border-white/10">
+                   <div className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">Data_Stream_Log</div>
+                   <div className="w-32 h-1 bg-white/5 overflow-hidden">
+                      <div className="w-1/2 h-full bg-[#1db954] animate-[shimmer_2s_infinite]" />
+                   </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

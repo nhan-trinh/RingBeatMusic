@@ -3,6 +3,8 @@ import { AppError, ErrorCodes } from '../../shared/utils/app-error';
 import { redis } from '../../shared/config/redis';
 import bcrypt from 'bcryptjs';
 import { NotificationService } from '../notification/notification.service';
+import { SupabaseUtil } from '../../shared/utils/supabase.util';
+import path from 'path';
 
 export const AdminService = {
   // ── User Management ──
@@ -256,5 +258,86 @@ export const AdminService = {
     });
     
     return { message: 'Đã xóa sạch bộ nhớ đệm (Cache)' };
+  },
+
+  // ── Hero Section Config ──
+  getHeroConfig: async () => {
+    const cached = await redis.get('hero_config');
+    if (cached) return JSON.parse(cached);
+
+    const configKeys = ['hero_background_url', 'hero_background_type'];
+    const settings = await prisma.systemConfig.findMany({
+      where: { key: { in: configKeys } }
+    });
+
+    const config = settings.reduce((acc: any, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+
+    const result = {
+      backgroundUrl: config['hero_background_url'] || null,
+      backgroundType: config['hero_background_type'] || 'video',
+    };
+
+    await redis.setex('hero_config', 300, JSON.stringify(result)); // Cache 5 mins
+    return result;
+  },
+
+  updateHeroConfig: async (adminId: string, file?: Express.Multer.File, type?: string, url?: string) => {
+    let finalUrl = url;
+    let finalType = type || 'video';
+
+    if (file) {
+      const ext = path.extname(file.originalname);
+      const filename = `hero-bg-${Date.now()}${ext}`;
+      const contentType = file.mimetype;
+      // Define bucket based on file type. Let's use 'system-assets' bucket.
+      const bucketName = 'system-assets';
+      
+      finalUrl = await SupabaseUtil.uploadBuffer(bucketName, filename, file.buffer, contentType);
+      
+      if (contentType.startsWith('image/')) {
+        finalType = 'image';
+      } else {
+        finalType = 'video';
+      }
+    }
+
+    const operations = [];
+    if (finalUrl !== undefined) {
+      operations.push(
+        prisma.systemConfig.upsert({
+          where: { key: 'hero_background_url' },
+          update: { value: finalUrl || '' },
+          create: { key: 'hero_background_url', value: finalUrl || '' },
+        })
+      );
+    }
+    
+    if (finalType !== undefined) {
+      operations.push(
+        prisma.systemConfig.upsert({
+          where: { key: 'hero_background_type' },
+          update: { value: finalType },
+          create: { key: 'hero_background_type', value: finalType },
+        })
+      );
+    }
+
+    if (operations.length > 0) {
+      await prisma.$transaction(operations);
+      await redis.del('hero_config');
+      await prisma.auditLog.create({
+        data: {
+          actorId: adminId,
+          action: 'CONFIG_UPDATED',
+          targetType: 'system',
+          metadata: { action: 'update_hero_config', url: finalUrl, type: finalType }
+        }
+      });
+    }
+
+    return { message: 'Đã cập nhật Hero Section Background', url: finalUrl, type: finalType };
   },
 };

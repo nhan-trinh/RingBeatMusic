@@ -93,4 +93,15 @@ export const adminController = {
     const result = await AdminService.clearCache(req.user!.id);
     sendSuccess(res, result);
   }),
+
+  // Hero Section
+  getHeroConfig: catchAsync(async (_req: Request, res: Response) => {
+    const result = await AdminService.getHeroConfig();
+    sendSuccess(res, result);
+  }),
+  updateHeroConfig: catchAsync(async (req: Request, res: Response) => {
+    const { url, type } = req.body;
+    const result = await AdminService.updateHeroConfig(req.user!.id, req.file, type, url);
+    sendSuccess(res, result);
+  }),
 };
