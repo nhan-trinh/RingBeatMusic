@@ -10,12 +10,11 @@ class SocketService {
     if (this.socket?.connected) return;
 
     const token = useAuthStore.getState().accessToken;
-    if (!token) return;
-
+    
     this.socket = io(SOCKET_URL, {
-      auth: { token },
+      auth: token ? { token } : {},
       withCredentials: true,
-      transports: ['websocket'], // Ưu tiên websocket để tránh polling
+      transports: ['websocket'],
     });
 
     this.socket.on('connect', () => {

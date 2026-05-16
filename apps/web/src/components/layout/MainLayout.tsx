@@ -70,13 +70,13 @@ export const MainLayout = () => {
   }, [setFullscreen]);
 
   useEffect(() => {
+    // Luôn kết nối socket để nhận các sự kiện hệ thống (vd: Global Banner)
+    socketService.connect();
+
     if (isAuthenticated) {
-      socketService.connect();
       initNotifications();
       initFriendActivity();
       fetchNotifications();
-    } else {
-      socketService.disconnect();
     }
 
     return () => {};

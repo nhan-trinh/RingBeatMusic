@@ -112,13 +112,12 @@ export const AdminSettingsPage = () => {
       }
       formData.append('heroText', heroText);
 
-      await api.post('/admin/hero-config', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post('/admin/hero-config', formData);
 
       toast.success('Đã cập nhật Hero Section');
       queryClient.invalidateQueries({ queryKey: ['hero_config'] });
       setHeroFile(null);
+      setHeroPreview(null);
     } catch (error) {
       toast.error('Lỗi khi cập nhật Hero Background');
     } finally {

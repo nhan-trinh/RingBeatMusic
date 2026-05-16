@@ -7,20 +7,24 @@ export const socketAuthMiddleware = (socket: Socket, next: (err?: Error) => void
     const token = socket.handshake.auth.token || socket.handshake.headers['authorization']?.split(' ')[1];
 
     if (!token) {
-      return next(new Error('Authentication token is required'));
+      // Cho phép khách kết nối để nhận các event công khai
+      (socket as any).user = null;
+      return next();
     }
 
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as any;
 
     // Gắn thông tin vào socket để dùng sau này
     (socket as any).user = {
-      id: decoded.sub, // 'sub' chứa userId trong payload JWT
+      id: decoded.sub, 
       role: decoded.role,
       name: decoded.name
     };
 
     next();
   } catch (error) {
-    next(new Error('Invalid or expired token'));
+    // Ngay cả khi token sai/hết hạn, vẫn cho phép kết nối như một khách (guest)
+    (socket as any).user = null;
+    next();
   }
 };

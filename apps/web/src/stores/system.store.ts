@@ -24,7 +24,8 @@ export const useSystemStore = create<SystemStore>((set) => ({
       set({ loading: true });
       // public endpoint or admin endpoint?
       // Better have a public endpoint for basic settings
-      const res = await api.get('/home/settings'); 
+      // Thêm timestamp t để tránh cache trình duyệt trên production
+      const res = await api.get(`/home/settings?t=${Date.now()}`); 
       set({ settings: res.data, loading: false });
     } catch (error) {
       set({ loading: false });

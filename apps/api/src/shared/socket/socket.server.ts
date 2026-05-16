@@ -16,13 +16,17 @@ export const initSocketServer = (socketIo: Server) => {
     // Lưu lại user data từ middleware
     const user = (socket as any).user;
     
-    // Tham gia room cá nhân dựa trên userId (để push thông báo đích danh)
-    socket.join(`user:${user.id}`);
-    console.log(`📡 Socket connected: [${socket.id}] - User: ${user.name}`);
+    if (user) {
+      // Tham gia room cá nhân dựa trên userId (để push thông báo đích danh)
+      socket.join(`user:${user.id}`);
+      console.log(`📡 Socket connected: [${socket.id}] - User: ${user.name}`);
 
-    // Đăng ký các handler domain (vd: player sync)
-    registerPlayerHandlers(io, socket, user);
-    registerSocialHandlers(io, socket, user);
+      // Đăng ký các handler domain cần xác thực
+      registerPlayerHandlers(io, socket, user);
+      registerSocialHandlers(io, socket, user);
+    } else {
+      console.log(`📡 Socket connected: [${socket.id}] - Guest`);
+    }
 
     socket.on('disconnect', () => {
       console.log(`🔌 Socket disconnected: [${socket.id}]`);
