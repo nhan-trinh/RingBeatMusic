@@ -295,7 +295,7 @@ export const AdminService = {
 
   updateHeroConfig: async (adminId: string, file?: Express.Multer.File, type?: string, url?: string, heroText?: string) => {
     let finalUrl = url;
-    let finalType = type || 'video';
+    let finalType = type; // Tránh gán mặc định 'video' ở đây để không ghi đè config cũ
 
     if (file) {
       const ext = path.extname(file.originalname);

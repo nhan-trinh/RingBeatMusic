@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { adminController } from './admin.controller';
 import { authMiddleware, authorize } from '../../shared/middleware/auth.middleware';
-import { uploadVideo } from '../../shared/middleware/upload.middleware';
+import { uploadHeroMedia } from '../../shared/middleware/upload.middleware';
 
 export const adminRouter = Router();
 
@@ -43,4 +43,4 @@ adminRouter.get('/analytics/top-artists', adminController.getTopArtists);
 adminRouter.get('/settings', adminController.getSettings);
 adminRouter.post('/settings', adminController.updateSettings);
 adminRouter.post('/system/clear-cache', adminController.clearCache);
-adminRouter.post('/hero-config', uploadVideo.single('file'), adminController.updateHeroConfig);
+adminRouter.post('/hero-config', uploadHeroMedia.single('file'), adminController.updateHeroConfig);

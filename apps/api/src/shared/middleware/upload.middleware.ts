@@ -38,19 +38,19 @@ export const uploadAudio = multer({
   },
 });
 
-// Filter cho video (Hero Background)
-const videoFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  if (file.mimetype.startsWith('video/')) {
+// Filter cho Hero Section (Hỗ trợ cả Video và Ảnh)
+const heroMediaFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype.startsWith('video/') || file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new AppError('Chỉ hỗ trợ upload file video (mp4, webm)', 400, ErrorCodes.VALIDATION_ERROR));
+    cb(new AppError('Chỉ hỗ trợ upload file video (mp4, webm) hoặc ảnh (jpg, png, webp)', 400, ErrorCodes.VALIDATION_ERROR));
   }
 };
 
-export const uploadVideo = multer({
+export const uploadHeroMedia = multer({
   storage,
-  fileFilter: videoFilter,
+  fileFilter: heroMediaFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // Giới hạn 100MB cho video
+    fileSize: 100 * 1024 * 1024, // Giới hạn 100MB
   },
 });
