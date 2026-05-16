@@ -557,6 +557,8 @@ model UserSession {
   @@index([userId, isRevoked])
   // Tối ưu query: lookup bằng tokenHash khi refresh
   @@index([tokenHash])
+  // Tối ưu query: dọn dẹp và lọc session hết hạn
+  @@index([expiresAt])
 }
 
 // =============================================

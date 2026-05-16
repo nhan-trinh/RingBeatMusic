@@ -43,56 +43,67 @@ export const AdminOverviewPage = () => {
   ];
 
   return (
-    <div className="p-8">
-      <h2 className="text-3xl font-bold mb-8">System Overview</h2>
+    <div className="space-y-10 pb-20">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">System Overview</h2>
+        <p className="text-zinc-500 text-sm mt-1">Phân tích số liệu hoạt động của hệ thống RingBeat.</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-[#181818] p-6 rounded-xl border border-[#282828] flex flex-col gap-4 relative overflow-hidden group hover:bg-[#202020] transition-colors">
-            <div className={`p-3 rounded-xl inline-flex w-fit ${stat.color} bg-opacity-20`}>
-              <stat.icon size={24} className={stat.color.replace('bg-', 'text-')} />
+          <div key={i} className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800 flex flex-col justify-between h-32 hover:border-zinc-700 transition-all group">
+            <div className="flex justify-between items-start">
+              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{stat.label}</p>
+              <stat.icon size={18} className="text-zinc-500 group-hover:text-[#1db954] transition-colors" />
             </div>
             <div>
-              <p className="text-3xl font-bold mb-1 tracking-tight">{stat.value}</p>
-              <p className="text-sm font-medium text-[#b3b3b3] uppercase tracking-wider">{stat.label}</p>
+              <p className="text-2xl font-bold tracking-tight text-zinc-100">{stat.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <Award size={24} className="text-yellow-500" /> Top Artists by Activity
-      </h3>
-      <div className="bg-[#181818] rounded-xl border border-[#282828] overflow-hidden">
-        <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead className="bg-[#282828]/50 uppercase tracking-wider text-[#b3b3b3] text-xs">
-            <tr>
-              <th className="px-6 py-4 font-semibold">Stage Name</th>
-              <th className="px-6 py-4 font-semibold text-center">Verified</th>
-              <th className="px-6 py-4 font-semibold text-right">Uploaded Songs</th>
-              <th className="px-6 py-4 font-semibold text-right">Followers</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#282828]">
-            {topArtists.map((artist: any) => (
-              <tr key={artist.id} className="hover:bg-[#282828]/30 transition-colors">
-                <td className="px-6 py-4 font-bold text-base">{artist.stageName}</td>
-                <td className="px-6 py-4 text-center">
-                  {artist.isVerified ? (
-                     <span className="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400">VERIFIED</span>
-                  ) : (
-                     <span className="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-[#282828] text-[#888]">NO</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-right font-mono text-[#b3b3b3]">{artist._count.songs}</td>
-                <td className="px-6 py-4 text-right font-mono text-[#b3b3b3]">{artist._count.followedBy}</td>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <Award size={20} className="text-[#1db954]" /> Top Artists by Activity
+          </h3>
+          <button className="text-xs font-medium text-[#1db954] hover:underline">View All Artists</button>
+        </div>
+        
+        <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden backdrop-blur-sm">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-900/80">
+                <th className="px-6 py-4 font-semibold text-zinc-400">Stage Name</th>
+                <th className="px-6 py-4 font-semibold text-zinc-400 text-center">Status</th>
+                <th className="px-6 py-4 font-semibold text-zinc-400 text-right">Uploaded</th>
+                <th className="px-6 py-4 font-semibold text-zinc-400 text-right">Followers</th>
               </tr>
-            ))}
-            {topArtists.length === 0 && (
-              <tr><td colSpan={4} className="px-6 py-8 text-center text-[#b3b3b3]">Chưa có nghệ sĩ nào.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {topArtists.map((artist: any) => (
+                <tr key={artist.id} className="hover:bg-zinc-800/40 transition-colors group">
+                  <td className="px-6 py-4">
+                    <span className="font-bold text-zinc-200 group-hover:text-[#1db954] transition-colors">{artist.stageName}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {artist.isVerified ? (
+                       <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Verified</span>
+                    ) : (
+                       <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-500 border border-zinc-700">Standard</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right tabular-nums text-zinc-400">{artist._count.songs}</td>
+                  <td className="px-6 py-4 text-right tabular-nums text-zinc-400">{artist._count.followedBy}</td>
+                </tr>
+              ))}
+              {topArtists.length === 0 && (
+                <tr><td colSpan={4} className="px-6 py-12 text-center text-zinc-500">Chưa có dữ liệu nghệ sĩ.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -146,7 +146,7 @@ export const HomePage = () => {
                 </div>
 
                 <p className="max-w-xl text-white/50 text-[12px] font-black uppercase tracking-[0.2em] leading-relaxed italic border-l-4 border-[#1db954] pl-8 py-4 bg-black/40 backdrop-blur-sm">
-                  Truy cập vào hệ thống âm thanh tần số cao. Dữ liệu telemetry cho thấy tín hiệu ổn định trên toàn bộ các node thứ cấp. Sẵn sàng truyền phát tín hiệu đồng bộ.
+                  {heroConfig?.heroText || 'Truy cập vào hệ thống âm thanh tần số cao. Dữ liệu telemetry cho thấy tín hiệu ổn định trên toàn bộ các node thứ cấp. Sẵn sàng truyền phát tín hiệu đồng bộ.'}
                 </p>
                 
                 <div className="flex items-center gap-8">

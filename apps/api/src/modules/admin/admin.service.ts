@@ -241,6 +241,14 @@ export const AdminService = {
     // Clear specific caches related to settings if any
     await redis.del('system_settings');
     
+    // Phát hành sự kiện Socket.io để các client cập nhật real-time (vd: Banner)
+    try {
+      const { getIO } = require('../../shared/socket/socket.server');
+      getIO().emit('system_settings_updated', { updatedKeys: Object.keys(settings) });
+    } catch (error) {
+      console.error('❌ Lỗi khi phát socket event:', error);
+    }
+    
     return { message: 'Đã cập nhật cấu hình hệ thống' };
   },
 
@@ -265,7 +273,7 @@ export const AdminService = {
     const cached = await redis.get('hero_config');
     if (cached) return JSON.parse(cached);
 
-    const configKeys = ['hero_background_url', 'hero_background_type'];
+    const configKeys = ['hero_background_url', 'hero_background_type', 'hero_text'];
     const settings = await prisma.systemConfig.findMany({
       where: { key: { in: configKeys } }
     });
@@ -278,13 +286,14 @@ export const AdminService = {
     const result = {
       backgroundUrl: config['hero_background_url'] || null,
       backgroundType: config['hero_background_type'] || 'video',
+      heroText: config['hero_text'] || 'Truy cập vào hệ thống âm thanh tần số cao. Dữ liệu telemetry cho thấy tín hiệu ổn định trên toàn bộ các node thứ cấp. Sẵn sàng truyền phát tín hiệu đồng bộ.'
     };
 
     await redis.setex('hero_config', 300, JSON.stringify(result)); // Cache 5 mins
     return result;
   },
 
-  updateHeroConfig: async (adminId: string, file?: Express.Multer.File, type?: string, url?: string) => {
+  updateHeroConfig: async (adminId: string, file?: Express.Multer.File, type?: string, url?: string, heroText?: string) => {
     let finalUrl = url;
     let finalType = type || 'video';
 
@@ -321,6 +330,16 @@ export const AdminService = {
           where: { key: 'hero_background_type' },
           update: { value: finalType },
           create: { key: 'hero_background_type', value: finalType },
+        })
+      );
+    }
+
+    if (heroText !== undefined) {
+      operations.push(
+        prisma.systemConfig.upsert({
+          where: { key: 'hero_text' },
+          update: { value: heroText },
+          create: { key: 'hero_text', value: heroText },
         })
       );
     }

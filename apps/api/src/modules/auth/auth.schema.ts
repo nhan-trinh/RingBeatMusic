@@ -68,7 +68,11 @@ export const confirmDeleteAccountSchema = z.object({
 export const resolveDeviceLimitSchema = z.object({
   body: z.object({
     actionToken: z.string().min(1, 'Action token là bắt buộc'),
-    sessionId: z.string().uuid('sessionId không hợp lệ'),
+    // '__all__' = revoke toàn bộ session, hoặc UUID cụ thể
+    sessionId: z.union([
+      z.string().uuid('sessionId không hợp lệ'),
+      z.literal('__all__'),
+    ]),
   }),
 });
 

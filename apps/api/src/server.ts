@@ -10,6 +10,7 @@ import './shared/config/cloudinary'; // Initialize Cloudinary
 import { initMeiliSearch } from './shared/config/meilisearch';
 import { initSocketServer } from './shared/socket/socket.server';
 import './workers/media.worker'; // Bật Media Worker xử lý hàng đợi
+import { TaskService } from './shared/services/task.service';
 
 const startServer = async (): Promise<void> => {
   // Kết nối databases
@@ -24,6 +25,12 @@ const startServer = async (): Promise<void> => {
 
   await redis.ping();
   // (Log ✅ Redis đã kết nối sẽ tự động in ra từ sự kiện 'connect' trong file redis.ts)
+
+  // ── Khởi chạy Background Tasks ────────────────
+  // Chạy dọn dẹp session rác lần đầu khi startup
+  TaskService.cleanupSessions();
+  // Thiết lập dọn dẹp định kỳ mỗi 24 giờ
+  setInterval(() => TaskService.cleanupSessions(), 24 * 60 * 60 * 1000);
 
   // Tạo Express app và HTTP server
   const app = createApp();

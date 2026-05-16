@@ -100,8 +100,8 @@ export const adminController = {
     sendSuccess(res, result);
   }),
   updateHeroConfig: catchAsync(async (req: Request, res: Response) => {
-    const { url, type } = req.body;
-    const result = await AdminService.updateHeroConfig(req.user!.id, req.file, type, url);
+    const { url, type, heroText } = req.body;
+    const result = await AdminService.updateHeroConfig(req.user!.id, req.file, type, url, heroText);
     sendSuccess(res, result);
   }),
 };

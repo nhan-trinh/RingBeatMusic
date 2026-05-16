@@ -232,7 +232,12 @@ export const AuthService = {
 
       await redis.set(
         KEY.actionToken(actionTokenHash),
-        JSON.stringify({ userId: user.id, scope: 'resolve_device_limit' }),
+        JSON.stringify({ 
+          userId: user.id, 
+          scope: 'resolve_device_limit',
+          // Lưu cache user để resolve nhanh hơn
+          userData: { id: user.id, email: user.email, name: user.name, role: user.role, avatarUrl: user.avatarUrl }
+        }),
         'EX', 5 * 60 // 5 phút
       );
 
@@ -309,38 +314,53 @@ export const AuthService = {
     // Validate Action Token
     const rawPayload = await redis.get(redisKey);
     if (!rawPayload) {
-      throw new AppError('Action token không hợp lệ hoặc đã hết hạn', 401, ErrorCodes.ACTION_TOKEN_INVALID);
+      throw new AppError('Action token không hợp lệ hoặc đã hết hạn. Vui lòng thử đăng nhập lại.', 401, ErrorCodes.ACTION_TOKEN_INVALID);
     }
 
-    const payload = JSON.parse(rawPayload) as { userId: string; scope: string };
+    const payload = JSON.parse(rawPayload) as { 
+      userId: string; 
+      scope: string; 
+      userData: { id: string; email: string; name: string; role: string; avatarUrl: string | null } 
+    };
 
     // 1) Validate scope cố định
     if (payload.scope !== 'resolve_device_limit') {
       throw new AppError('Action token không đúng scope', 403, ErrorCodes.ACTION_TOKEN_INVALID);
     }
 
-    // 2) Validate session thuộc về đúng userId (chống IDOR)
-    const sessionToRevoke = await prisma.userSession.findFirst({
-      where: { id: sessionIdToRevoke, userId: payload.userId },
-    });
-    if (!sessionToRevoke) {
-      throw new AppError('Session không tồn tại hoặc không có quyền thu hồi', 404, ErrorCodes.SESSION_NOT_FOUND);
+    const revokeAll = sessionIdToRevoke === '__all__';
+
+    // 2) Validate session (chỉ khi revoke từng cái — chống IDOR)
+    if (!revokeAll) {
+      const sessionToRevoke = await prisma.userSession.findFirst({
+        where: { id: sessionIdToRevoke, userId: payload.userId },
+      });
+      if (!sessionToRevoke) {
+        throw new AppError('Session không tồn tại hoặc không có quyền thu hồi', 404, ErrorCodes.SESSION_NOT_FOUND);
+      }
     }
 
     // 3) Invalidate Action Token ngay lập tức (dùng 1 lần)
     await redis.del(redisKey);
 
-    // 4) Atomic: revoke session cũ + tạo session mới trong 1 Prisma transaction
+    // 4) Atomic: revoke session(s) cũ + tạo session mới trong 1 Prisma transaction
     const newRefreshToken = generateOpaqueToken();
     const deviceInfo = parseUserAgent(meta?.userAgent);
 
-    const [, , user] = await prisma.$transaction([
-      // Revoke session được chọn
-      prisma.userSession.update({
-        where: { id: sessionIdToRevoke },
-        data: { isRevoked: true },
-      }),
-      // Tạo session mới
+    const revokeOperation = revokeAll
+      ? prisma.userSession.updateMany({
+          where: { userId: payload.userId, isRevoked: false },
+          data: { isRevoked: true },
+        })
+      : prisma.userSession.update({
+          where: { id: sessionIdToRevoke },
+          data: { isRevoked: true },
+        });
+
+    await prisma.$transaction([
+      // Revoke session(s) được chọn
+      revokeOperation as any,
+      // Tạo session mới cho thiết bị đang login
       prisma.userSession.create({
         data: {
           userId: payload.userId,
@@ -353,16 +373,15 @@ export const AuthService = {
           expiresAt: getSessionExpiresAt(),
         },
       }),
-      // Lấy thông tin user để cấp token
-      prisma.user.findUniqueOrThrow({ where: { id: payload.userId } }),
     ]);
 
-    const accessToken = TokenUtil.generateTokens(user.id, user.role, user.name).accessToken;
+    const { userData } = payload;
+    const accessToken = TokenUtil.generateTokens(userData.id, userData.role as any, userData.name).accessToken;
 
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, avatarUrl: user.avatarUrl },
+      user: userData,
     };
   },
 

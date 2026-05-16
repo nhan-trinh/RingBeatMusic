@@ -8,6 +8,7 @@ import { cn } from '../../lib/utils';
 import { SearchInput } from '../search/SearchInput';
 import { NotificationPopover } from '../notification/NotificationPopover';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../../lib/api';
 
 export const Topbar = () => {
   const navigate = useNavigate();
@@ -238,7 +239,16 @@ export const Topbar = () => {
 
                       <button
                         className="w-full text-left flex items-center justify-between px-5 py-4 group hover:bg-white transition-all mt-2"
-                        onClick={() => { logout(); setShowMenu(false); navigate('/login'); }}
+                        onClick={async () => { 
+                          try {
+                            await api.post('/auth/logout');
+                          } catch (e) {
+                            console.error('Logout API failed', e);
+                          }
+                          logout(); 
+                          setShowMenu(false); 
+                          navigate('/login'); 
+                        }}
                       >
                         <div className="flex items-center gap-4">
                            <LogOut size={14} className="text-white/30 group-hover:text-black" /> 

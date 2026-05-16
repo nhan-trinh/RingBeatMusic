@@ -1,6 +1,22 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { Home, ListMusic, Users, Settings, ShieldAlert, FileText, Info, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import { 
+  Home, 
+  ListMusic, 
+  Users, 
+  Settings, 
+  ShieldAlert, 
+  FileText, 
+  ChevronLeft,
+  Menu,
+  Bell,
+  ExternalLink,
+  LogOut
+} from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
+import { motion } from 'framer-motion';
+import { clsx } from 'clsx';
+import { api } from '../../lib/api';
 
 const navItems = [
   { to: '/admin', icon: Home, label: 'Overview', end: true },
@@ -12,60 +28,152 @@ const navItems = [
 ];
 
 export const AdminLayout = () => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen w-full flex-col bg-[#000000] overflow-hidden text-white">
-      {/* Top Header */}
-      <div className="h-16 flex items-center justify-between px-6 bg-[#000000] shrink-0">
-        <div className="flex items-center gap-3">
-          <ShieldAlert className="text-[#e22134]" size={28} />
-          <h1 className="text-xl font-bold tracking-tight">RingBeat Admin</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold max-w-[150px] truncate text-[#1DB954]">
-            {user?.name}
-          </span>
-          <span className="text-[10px] bg-[#e22134] px-2 py-0.5 rounded uppercase font-bold tracking-widest text-[#fff]">
-            {user?.role}
-          </span>
-          <NavLink to="/" className="text-sm text-[#b3b3b3] hover:text-white flex items-center gap-1.5 ml-4">
-            <LogOut size={16} /> Exit
-          </NavLink>
-        </div>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden p-2 gap-2 pb-2">
-        {/* Sidebar */}
-        <div className="w-[260px] bg-[#000000] p-4 flex flex-col shrink-0 overflow-y-auto">
-          <div className="flex flex-col gap-1">
-            <div className="text-[11px] font-bold text-[#b3b3b3] mb-2 px-2 uppercase tracking-[2px]">Core Module</div>
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `flex items-center gap-4 px-3 py-2.5 rounded-md font-semibold text-sm transition-colors ${isActive ? 'bg-[#282828] text-white' : 'text-[#b3b3b3] hover:text-white hover:bg-[#1a1a1a]'
-                  }`
-                }
+    <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+      {/* Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 80 : 260 }}
+        className="h-full bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 relative z-40"
+      >
+        {/* Logo Section */}
+        <div className="h-16 flex items-center px-6 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-8 h-8 bg-[#1db954] rounded-lg flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(29,185,84,0.3)]">
+              <ShieldAlert size={18} className="text-black" />
+            </div>
+            {!isCollapsed && (
+              <motion.span 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="font-bold text-lg tracking-tight whitespace-nowrap"
               >
-                <item.icon size={20} />
-                {item.label}
-              </NavLink>
-            ))}
-          </div>
-
-          <div className="mt-auto px-4 py-6 text-xs text-[#b3b3b3] flex flex-col items-center text-center opacity-50">
-            <Info size={24} className="mb-2" />
-            <p>Admin Control Panel</p>
-            <p>SuperProject v1.0</p>
+                RingBeat <span className="text-[#1db954]">Admin</span>
+              </motion.span>
+            )}
           </div>
         </div>
 
-        {/* Main View */}
-        <main className="flex-1 bg-[#121212] rounded-lg overflow-y-auto relative isolate shadow-2xl">
-          <Outlet />
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
+          {!isCollapsed && (
+            <p className="px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Main Menu</p>
+          )}
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              title={isCollapsed ? item.label : ''}
+              className={({ isActive }) => clsx(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
+                isActive 
+                  ? "bg-zinc-800 text-white shadow-sm" 
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+              )}
+            >
+              <item.icon size={18} className={clsx(
+                "shrink-0 transition-colors",
+                isCollapsed && "mx-auto"
+              )} />
+              {!isCollapsed && <span>{item.label}</span>}
+              
+              {/* Active Indicator Dot */}
+              <NavLink to={item.to} end={item.end}>
+                {({ isActive }) => isActive && (
+                  <motion.div 
+                    layoutId="active-pill"
+                    className="absolute left-0 w-1 h-5 bg-[#1db954] rounded-r-full"
+                  />
+                )}
+              </NavLink>
+            </NavLink>
+          ))}
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-zinc-800 space-y-2">
+          <Link 
+            to="/" 
+            className="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white text-sm transition-colors rounded-lg hover:bg-zinc-900"
+          >
+            <ExternalLink size={18} className={isCollapsed ? "mx-auto" : ""} />
+            {!isCollapsed && <span>View Website</span>}
+          </Link>
+          
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="w-full flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-white text-sm transition-colors rounded-lg hover:bg-zinc-800"
+          >
+            {isCollapsed ? <Menu size={18} className="mx-auto" /> : <ChevronLeft size={18} />}
+            {!isCollapsed && <span>Collapse</span>}
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-30">
+          <div className="flex items-center gap-4">
+             {/* Dynamic Title based on current route would be here */}
+             <div className="flex items-center gap-2 text-zinc-500 text-xs">
+                <span>Dashboard</span>
+                <span>/</span>
+                <span className="text-zinc-200 font-medium">System Overview</span>
+             </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button className="text-zinc-400 hover:text-white transition-colors relative">
+               <Bell size={20} />
+               <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#1db954] rounded-full border-2 border-zinc-950" />
+            </button>
+
+            <div className="h-8 w-[1px] bg-zinc-800" />
+
+            {/* User Dropdown */}
+            <div className="relative group">
+              <button className="flex items-center gap-3 text-left">
+                <div className="hidden sm:block">
+                  <p className="text-sm font-bold leading-none">{user?.name}</p>
+                  <p className="text-[10px] text-zinc-500 font-medium mt-1 uppercase tracking-tighter">{user?.role}</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 font-bold overflow-hidden hover:border-[#1db954] transition-colors">
+                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : user?.name?.charAt(0).toUpperCase()}
+                </div>
+              </button>
+
+              <div className="absolute right-0 top-full mt-2 w-48 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden z-50">
+                <div className="p-2 space-y-1">
+                  <Link to="/" className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors">
+                    <ExternalLink size={16} /> User App
+                  </Link>
+                  <button 
+                    onClick={async () => {
+                      try { await api.post('/auth/logout'); } catch(e) {}
+                      logout();
+                      navigate('/login');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <LogOut size={16} /> Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* View Port */}
+        <main className="flex-1 overflow-y-auto bg-zinc-950 p-8 custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

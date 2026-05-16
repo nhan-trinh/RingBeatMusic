@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 interface HeroConfig {
   backgroundUrl: string | null;
   backgroundType: 'video' | 'image';
+  heroText: string;
 }
 
 export const useHeroConfig = () => {
@@ -17,6 +18,7 @@ export const useHeroConfig = () => {
         return {
           backgroundUrl: null,
           backgroundType: 'video',
+          heroText: 'Truy cập vào hệ thống âm thanh tần số cao. Dữ liệu telemetry cho thấy tín hiệu ổn định trên toàn bộ các node thứ cấp. Sẵn sàng truyền phát tín hiệu đồng bộ.'
         };
       }
     },

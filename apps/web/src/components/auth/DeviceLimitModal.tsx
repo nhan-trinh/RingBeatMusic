@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Monitor, Smartphone, Tablet, Globe, Zap, AlertTriangle, Loader2, LogOut } from 'lucide-react';
+import { Monitor, Smartphone, Tablet, Globe, Zap, AlertTriangle, Loader2, LogOut, ShieldOff } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ interface ActiveSession {
 interface DeviceLimitModalProps {
   actionToken: string;
   sessions: ActiveSession[];
-  onSuccess: () => void; // callback sau khi đăng nhập thành công
+  onSuccess: () => void;
   onCancel: () => void;
 }
 
@@ -39,6 +39,8 @@ const DeviceIcon = ({ type }: { type: ActiveSession['deviceType'] }) => {
   return <Monitor size={20} className={cls} />;
 };
 
+const REQUEST_TIMEOUT_MS = 15_000; // 15 giây timeout
+
 // ──────────────────────────────────────────────
 // Main Component
 // ──────────────────────────────────────────────
@@ -48,29 +50,37 @@ export const DeviceLimitModal = ({ actionToken, sessions, onSuccess, onCancel }:
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleResolve = async () => {
-    if (!selectedSessionId) {
-      toast.error('Vui lòng chọn một thiết bị để đăng xuất.');
-      return;
-    }
-
+  const handleResolve = async (sessionId: string) => {
     setIsSubmitting(true);
+
+    // AbortController để timeout 15 giây — tránh treo vô hạn
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     try {
-      const res = await api.post('/auth/resolve-device-limit', {
-        actionToken,
-        sessionId: selectedSessionId,
-      }) as any;
+      const res = await api.post(
+        '/auth/resolve-device-limit',
+        { actionToken, sessionId },
+        { signal: controller.signal }
+      ) as any;
+
+      clearTimeout(timeoutId);
 
       const { user, accessToken } = res.data;
-      // Cập nhật auth store giống flow login bình thường
       useAuthStore.getState().setAuth(accessToken, user);
       updateUser(user);
 
       toast.success('Đăng nhập thành công!');
       onSuccess();
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Không thể xử lý yêu cầu.';
-      toast.error(msg);
+      clearTimeout(timeoutId);
+
+      if (error.name === 'CanceledError' || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        toast.error('Yêu cầu mất quá nhiều thời gian (>15s). Vui lòng thử lại hoặc đăng nhập lại từ đầu.', { duration: 6000 });
+      } else {
+        const msg = error.response?.data?.message || 'Không thể xử lý yêu cầu.';
+        toast.error(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -106,8 +116,33 @@ export const DeviceLimitModal = ({ actionToken, sessions, onSuccess, onCancel }:
           </p>
         </div>
 
+        {/* === KICK ALL BUTTON === */}
+        <button
+          onClick={() => handleResolve('__all__')}
+          disabled={isSubmitting}
+          className="w-full flex items-center gap-4 px-10 py-4 bg-[#f97316]/5 border-b border-[#f97316]/20 hover:bg-[#f97316]/10 transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ShieldOff size={16} className="text-[#f97316] shrink-0" />
+          <div className="flex-1">
+            <p className="text-[11px] font-black text-[#f97316] uppercase tracking-wider">
+              Kick tất cả {sessions.length} thiết bị khác
+            </p>
+            <p className="text-[9px] text-white/25 uppercase tracking-widest mt-0.5">
+              Đăng xuất toàn bộ cùng lúc — nhanh & an toàn nhất
+            </p>
+          </div>
+          {isSubmitting ? (
+            <Loader2 size={14} className="animate-spin text-[#f97316]" />
+          ) : (
+            <span className="text-[10px] font-black text-[#f97316]/50">→</span>
+          )}
+        </button>
+
         {/* Device List */}
-        <div className="p-6 space-y-2 max-h-[320px] overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar">
+          <p className="text-[9px] font-black text-white/20 uppercase tracking-widest px-1 mb-3">
+            Hoặc chọn 1 thiết bị cụ thể:
+          </p>
           {sessions.map((session) => {
             const isSelected = selectedSessionId === session.id;
             const timeAgo = formatDistanceToNow(new Date(session.lastActiveAt), {
@@ -119,14 +154,14 @@ export const DeviceLimitModal = ({ actionToken, sessions, onSuccess, onCancel }:
               <button
                 key={session.id}
                 onClick={() => setSelectedSessionId(session.id)}
+                disabled={isSubmitting}
                 className={cn(
-                  'w-full flex items-center gap-5 p-5 border text-left transition-all duration-200',
+                  'w-full flex items-center gap-5 p-5 border text-left transition-all duration-200 disabled:opacity-40',
                   isSelected
                     ? 'border-[#f97316]/40 bg-[#f97316]/[0.05]'
                     : 'border-white/5 bg-white/[0.01] hover:border-white/20'
                 )}
               >
-                {/* Selection indicator */}
                 <div className={cn(
                   'w-3 h-3 border-2 flex-shrink-0 transition-all',
                   isSelected ? 'border-[#f97316] bg-[#f97316]' : 'border-white/20'
@@ -166,15 +201,16 @@ export const DeviceLimitModal = ({ actionToken, sessions, onSuccess, onCancel }:
         </div>
 
         {/* Actions */}
-        <div className="px-10 py-8 border-t border-white/10 flex gap-4">
+        <div className="px-10 py-6 border-t border-white/10 flex gap-4">
           <button
             onClick={onCancel}
-            className="flex-1 py-4 border border-white/10 text-white/40 hover:text-white hover:border-white/30 font-black uppercase tracking-[0.3em] text-[10px] transition-all"
+            disabled={isSubmitting}
+            className="flex-1 py-4 border border-white/10 text-white/40 hover:text-white hover:border-white/30 font-black uppercase tracking-[0.3em] text-[10px] transition-all disabled:opacity-30"
           >
             Hủy
           </button>
           <button
-            onClick={handleResolve}
+            onClick={() => selectedSessionId && handleResolve(selectedSessionId)}
             disabled={!selectedSessionId || isSubmitting}
             className="flex-1 py-4 bg-[#f97316] text-black font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white transition-all disabled:opacity-30 flex items-center justify-center gap-3"
           >
