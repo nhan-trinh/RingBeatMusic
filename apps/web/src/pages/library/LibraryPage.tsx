@@ -264,6 +264,8 @@ export const LibraryPage = () => {
                 <MediaCard
                   key={album.id} id={album.id} title={album.title} subtitle={album.artist?.stageName || 'Primary_Source'}
                   coverUrl={album.coverUrl} type="album"
+                  artistId={album.artistId || album.artist?.id}
+                  artistName={album.artist?.stageName || 'Primary_Source'}
                 />
               ))}
             </motion.div>

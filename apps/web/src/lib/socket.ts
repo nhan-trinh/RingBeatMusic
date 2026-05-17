@@ -7,27 +7,39 @@ class SocketService {
   private socket: Socket | null = null;
 
   connect() {
-    if (this.socket?.connected) return;
-
     const token = useAuthStore.getState().accessToken;
-    
-    this.socket = io(SOCKET_URL, {
-      auth: token ? { token } : {},
-      withCredentials: true,
-      transports: ['websocket'],
-    });
 
-    this.socket.on('connect', () => {
-      // Ẩn log theo yêu cầu
-    });
+    if (!this.socket) {
+      // Khởi tạo lần đầu
+      this.socket = io(SOCKET_URL, {
+        auth: token ? { token } : {},
+        withCredentials: true,
+        transports: ['websocket'],
+      });
 
-    this.socket.on('disconnect', () => {
-      // Ẩn log theo yêu cầu
-    });
+      this.socket.on('connect', () => {
+        // Ẩn log theo yêu cầu
+      });
 
-    this.socket.on('connect_error', (err) => {
-      console.error('❌ Socket connect error:', err.message);
-    });
+      this.socket.on('disconnect', () => {
+        // Ẩn log theo yêu cầu
+      });
+
+      this.socket.on('connect_error', (err) => {
+        console.error('❌ Socket connect error:', err.message);
+      });
+    } else {
+      // Nếu đã có instance, kiểm tra xem token có đổi không
+      const currentToken = (this.socket.auth as any)?.token;
+      if (currentToken !== token) {
+        // Cập nhật auth và reconnect trên CÙNG 1 instance để không mất các event listeners
+        this.socket.auth = token ? { token } : {};
+        this.socket.disconnect().connect();
+      } else if (!this.socket.connected) {
+        // Nếu bị ngắt kết nối trước đó thì connect lại
+        this.socket.connect();
+      }
+    }
   }
 
   disconnect() {
@@ -45,7 +57,7 @@ class SocketService {
     this.socket?.on(event, callback);
   }
 
-  off(event: string, callback: (...args: any[]) => void) {
+  off(event: string, callback?: (...args: any[]) => void) {
     this.socket?.off(event, callback);
   }
 

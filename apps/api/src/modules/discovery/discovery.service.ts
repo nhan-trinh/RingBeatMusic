@@ -298,19 +298,60 @@ export const DiscoveryService = {
     });
   },
 
-  // 6. Gợi ý Artist dựa trên genre hoặc artist đã follow
+  // 6. Gợi ý Artist dựa trên lịch sử nghe nhạc và trạng thái follow
   getRecommendedArtists: async (userId: string) => {
+    // a. Lấy lịch sử nghe nhạc gần đây từ MongoDB để tính điểm tần suất nghe nghệ sĩ
+    const history = await ListeningHistory.find({ userId })
+      .select('songId')
+      .limit(500)
+      .lean();
+
+    const artistScores: Record<string, number> = {};
+
+    if (history.length > 0) {
+      const songPlayCounts: Record<string, number> = {};
+      history.forEach((h: any) => {
+        songPlayCounts[h.songId] = (songPlayCounts[h.songId] || 0) + 1;
+      });
+      const songIds = Object.keys(songPlayCounts);
+
+      const songs = await prisma.song.findMany({
+        where: { id: { in: songIds } },
+        select: { id: true, artistId: true }
+      });
+
+      songs.forEach((song) => {
+        if (song.artistId) {
+          const count = songPlayCounts[song.id] || 0;
+          artistScores[song.artistId] = (artistScores[song.artistId] || 0) + count;
+        }
+      });
+    }
+
+    // b. Lấy danh sách artist đã follow để loại trừ
     const followed = await prisma.followedArtist.findMany({
       where: { userId },
       select: { artistId: true }
     });
     const followedIds = followed.map(f => f.artistId);
 
-    // Tìm artist chưa follow
-    return await prisma.artist.findMany({
+    // c. Tìm các artist chưa follow
+    const allArtists = await prisma.artist.findMany({
       where: { id: { notIn: followedIds } },
-      take: 6,
       select: { id: true, stageName: true, avatarUrl: true }
     });
+
+    // d. Sắp xếp các artist theo điểm tần suất nghe nhạc giảm dần
+    const scoredArtists = allArtists.map((artist) => ({
+      ...artist,
+      score: artistScores[artist.id] || 0
+    })).sort((a, b) => b.score - a.score);
+
+    // e. Trả về 6 artist hàng đầu
+    return scoredArtists.slice(0, 6).map(({ id, stageName, avatarUrl }) => ({
+      id,
+      stageName,
+      avatarUrl
+    }));
   }
 };

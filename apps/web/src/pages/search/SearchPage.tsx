@@ -246,7 +246,7 @@ export const SearchPage = () => {
                 {results.albums.map((album: any) => (
                   <MediaCard
                     key={album.id} id={album.id} title={album.title} subtitle={album.artistName}
-                    coverUrl={album.coverUrl} type="album"
+                    coverUrl={album.coverUrl} type="album" artistId={album.artistId} artistName={album.artistName}
                   />
                 ))}
               </div>
@@ -263,7 +263,7 @@ export const SearchPage = () => {
                 {results.playlists.map((playlist: any) => (
                   <MediaCard
                     key={playlist.id} id={playlist.id} title={playlist.title} subtitle={playlist.description || "MANIFEST_SET"}
-                    coverUrl={playlist.coverUrl} type="playlist"
+                    coverUrl={playlist.coverUrl} type="playlist" ownerId={playlist.ownerId}
                   />
                 ))}
               </div>

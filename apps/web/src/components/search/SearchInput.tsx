@@ -99,9 +99,9 @@ export const SearchInput = () => {
   }
 
   return (
-    <div className="relative group selection:bg-[#1db954] selection:text-black">
+    <div className="relative group selection:bg-[#1db954] selection:text-black w-full min-w-[480px] max-w-[480px]">
       <div className={cn(
-        "flex h-12 w-full min-w-[380px] max-w-[380px] items-center bg-[#050505] px-4 border transition-all duration-500",
+        "flex h-12 w-full items-center bg-[#050505] px-4 border transition-all duration-500",
         showPopup ? "border-[#1db954]" : "border-white/10 hover:border-white/30"
       )}>
         <Search className={cn("h-4 w-4 transition-colors", showPopup ? "text-[#1db954]" : "text-white/20")} />
@@ -133,7 +133,7 @@ export const SearchInput = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute top-[calc(100%+8px)] left-0 w-[440px] bg-[#050505] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-50 p-0 overflow-hidden backdrop-blur-md"
+            className="absolute top-[calc(100%+8px)] left-0 w-full bg-[#050505] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-50 p-0 overflow-hidden backdrop-blur-md"
           >
             {/* Case 1: Recent Searches */}
             {!query.trim() && (
@@ -155,7 +155,7 @@ export const SearchInput = () => {
                   ) : (
                     recentSearches.map((item) => (
                       <div 
-                        key={`${item.type}-${item.id}`} 
+                        key={`${item.type}-\s*${item.id}`} 
                         className="group flex items-center gap-4 px-6 py-4 border-b border-white/5 hover:bg-white transition-all cursor-pointer relative"
                         onMouseDown={(e) => {
                           e.preventDefault();
@@ -170,14 +170,19 @@ export const SearchInput = () => {
                       >
                         <div className="w-8 h-8 border border-white/10 overflow-hidden flex-shrink-0 flex items-center justify-center bg-white/[0.02] group-hover:bg-black/5">
                           {item.type === 'query' ? (
-                            <Search className="h-4 w-4 text-white/20 group-hover:text-black/40" />
+                            <Search className="h-4 w-4 text-white/20 group-hover:text-[#1db954] transition-colors" />
                           ) : (
                             <img src={item.coverUrl} className={cn("w-full h-full object-cover grayscale group-hover:grayscale-0", item.type === 'artist' && "rounded-full")} alt="" />
                           )}
                         </div>
                         <div className="flex-1 flex flex-col min-w-0">
                           <span className="text-[13px] font-black uppercase tracking-tighter truncate group-hover:text-black">{item.title}</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-white/20 group-hover:text-black/40">{item.type.toUpperCase()}_UNIT</span>
+                          <span className={cn(
+                            "text-[8px] font-black uppercase tracking-widest text-white/20 transition-colors",
+                            item.type === 'query' ? "group-hover:text-[#1db954]" : "group-hover:text-black/40"
+                          )}>
+                            {item.type.toUpperCase()}_UNIT
+                          </span>
                         </div>
                         <button
                           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); removeItem(item.id, item.type); }}

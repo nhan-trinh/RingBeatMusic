@@ -5,6 +5,8 @@ import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SongContextMenu, useContextMenu } from './SongContextMenu';
 import { PlaylistContextMenu, usePlaylistContextMenu } from './PlaylistContextMenu';
+import { AlbumContextMenu, useAlbumContextMenu } from './AlbumContextMenu';
+import { ArtistContextMenu, useArtistContextMenu } from './ArtistContextMenu';
 import { useLibraryStore } from '../../stores/library.store';
 
 interface MediaCardProps {
@@ -17,16 +19,20 @@ interface MediaCardProps {
   type?: 'playlist' | 'album' | 'artist' | 'song' | 'profile';
   isPublic?: boolean;
   ownerId?: string;
+  artistId?: string;
+  artistName?: string;
   onRemove?: () => void;
 }
 
 // Tách riêng để memo hoạt động đúng
-export const MediaCard = memo(({ id, title, subtitle, coverUrl, isCircle = false, songs = [], type = 'playlist', isPublic, ownerId, onRemove }: MediaCardProps) => {
+export const MediaCard = memo(({ id, title, subtitle, coverUrl, isCircle = false, songs = [], type = 'playlist', isPublic, ownerId, artistId, artistName, onRemove }: MediaCardProps) => {
   const { setContextAndPlay, currentContextId, isPlaying, togglePlay } = usePlayerStore();
   const navigate = useNavigate();
   const { updatePlaylist } = useLibraryStore();
   const { menu: songMenu, openMenu: openSongMenu, closeMenu: closeSongMenu } = useContextMenu();
   const { menu: playlistMenu, openPlaylistMenu, closePlaylistMenu } = usePlaylistContextMenu();
+  const { menu: albumMenu, openAlbumMenu, closeAlbumMenu } = useAlbumContextMenu();
+  const { menu: artistMenu, openArtistMenu, closeArtistMenu } = useArtistContextMenu();
 
   const isThisPlaying = currentContextId === id && isPlaying;
 
@@ -64,6 +70,10 @@ export const MediaCard = memo(({ id, title, subtitle, coverUrl, isCircle = false
       openSongMenu(e, songs[0]);
     } else if (type === 'playlist') {
       openPlaylistMenu(e, { id, title, coverUrl, isPublic, ownerId: ownerId || '' });
+    } else if (type === 'album') {
+      openAlbumMenu(e, { id, title, artistId, artistName: artistName || subtitle });
+    } else if (type === 'artist') {
+      openArtistMenu(e, { id, name: title });
     }
   };
 
@@ -176,6 +186,22 @@ export const MediaCard = memo(({ id, title, subtitle, coverUrl, isCircle = false
               updatePlaylist(id, { title: newTitle.trim() });
             }
           }}
+        />
+      )}
+
+      {albumMenu && (
+        <AlbumContextMenu
+          album={albumMenu.album}
+          position={albumMenu.position}
+          onClose={closeAlbumMenu}
+        />
+      )}
+
+      {artistMenu && (
+        <ArtistContextMenu
+          artist={artistMenu.artist}
+          position={artistMenu.position}
+          onClose={closeArtistMenu}
         />
       )}
     </div>

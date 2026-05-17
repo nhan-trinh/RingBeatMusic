@@ -230,7 +230,7 @@ export const SearchService = {
           isPublic: true,
           songs: { some: { song: { artistId } } }
         },
-        select: { id: true, title: true, coverUrl: true, description: true },
+        select: { id: true, title: true, coverUrl: true, description: true, ownerId: true },
         take: 10
       });
     }

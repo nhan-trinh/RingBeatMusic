@@ -104,6 +104,8 @@ export const SectionPage = () => {
                 type={id === 'new-releases' || id === 'top-songs' || id === 'trending' || id === 'made-for-you' || id === 'daily-mix' || id === 'listen-again' ? 'song' : id === 'new-albums' ? 'album' : 'playlist'}
                 songs={id === 'new-releases' || id === 'top-songs' || id === 'trending' || id === 'made-for-you' || id === 'daily-mix' || id === 'listen-again' ? [item] : (id === 'new-albums' ? [] : item.songs)}
                 ownerId={item.ownerId}
+                artistId={item.artistId}
+                artistName={item.artistName}
               />
             ))}
           </motion.div>

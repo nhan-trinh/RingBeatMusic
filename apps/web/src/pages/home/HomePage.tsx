@@ -280,7 +280,7 @@ export const HomePage = () => {
           <Section title="New Albums" index="09" icon={Database} showAllLink="/section/new-albums">
             <MediaCarousel>
               {feedData.newAlbums?.map((album: any) => (
-                <MediaCard key={album.id} id={album.id} title={album.title} subtitle={album.artistName} coverUrl={album.coverUrl} type="album" />
+                <MediaCard key={album.id} id={album.id} title={album.title} subtitle={album.artistName} coverUrl={album.coverUrl} type="album" artistId={album.artistId} artistName={album.artistName} />
               ))}
             </MediaCarousel>
           </Section>

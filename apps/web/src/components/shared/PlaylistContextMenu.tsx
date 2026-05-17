@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Edit2, Trash2, Share2, Globe, Lock, AlertTriangle } from 'lucide-react';
+import { Edit2, Trash2, Share2, Globe, Lock, AlertTriangle, Heart } from 'lucide-react';
 import { useLibraryStore } from '../../stores/library.store';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUIStore } from '../../stores/ui.store';
@@ -29,7 +29,8 @@ export const PlaylistContextMenu = ({
   onClose,
   onRename,
 }: PlaylistContextMenuProps) => {
-  const { deletePlaylist, updatePlaylist } = useLibraryStore();
+  const { deletePlaylist, updatePlaylist, toggleFollowPlaylist, isFollowingPlaylist } = useLibraryStore();
+  const isSaved = isFollowingPlaylist(playlist.id);
   const { user } = useAuthStore();
   const { openReportModal } = useUIStore();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,7 @@ export const PlaylistContextMenu = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isOwner = playlist.ownerId === user?.id;
+  const isDiscoverWeekly = playlist.title === 'Discover Weekly';
 
   const adjustedPos = {
     x: Math.min(position.x, window.innerWidth - 240),
@@ -69,9 +71,7 @@ export const PlaylistContextMenu = ({
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  return (
+  };  return (
     <>
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
@@ -91,7 +91,7 @@ export const PlaylistContextMenu = ({
           </div>
 
           <div className="py-2">
-             {isOwner && (
+             {isOwner && !isDiscoverWeekly && (
                <MenuItem 
                  icon={<Edit2 size={14} />} 
                  label="Rename Archive" 
@@ -111,34 +111,47 @@ export const PlaylistContextMenu = ({
              />
           </div>
 
-          <div className="border-t border-white/10" />
+          {!isDiscoverWeekly && <div className="border-t border-white/10" />}
 
-          <div className="py-2">
-             {isOwner && (
-               <MenuItem 
-                 icon={playlist.isPublic ? <Lock size={14} /> : <Globe size={14} />} 
-                 label={playlist.isPublic ? "Set Private" : "Set Public"} 
-                 index="MOD"
-                 onClick={async () => {
-                   await updatePlaylist(playlist.id, { isPublic: !playlist.isPublic });
-                   onClose();
-                 }} 
-               />
-             )}
-             {!isOwner && user && (
-               <MenuItem 
-                 icon={<AlertTriangle size={14} />} 
-                 label="Flag_Archive" 
-                 index="RPT"
-                 onClick={() => {
-                   openReportModal(playlist.id, 'PLAYLIST', playlist.title);
-                   onClose();
-                 }} 
-               />
-             )}
-          </div>
+          {!isDiscoverWeekly && (
+            <div className="py-2">
+               {isOwner && (
+                 <MenuItem 
+                   icon={playlist.isPublic ? <Lock size={14} /> : <Globe size={14} />} 
+                   label={playlist.isPublic ? "Set Private" : "Set Public"} 
+                   index="MOD"
+                   onClick={async () => {
+                     await updatePlaylist(playlist.id, { isPublic: !playlist.isPublic });
+                     onClose();
+                   }} 
+                 />
+               )}
+               {!isOwner && user && (
+                   <>
+                     <MenuItem 
+                       icon={<Heart size={14} className={isSaved ? "fill-current text-[#1db954]" : ""} />} 
+                       label={isSaved ? "Remove from Library" : "Save to Library"} 
+                       index="LIB"
+                       onClick={() => {
+                         toggleFollowPlaylist(playlist.id, playlist.title);
+                         onClose();
+                       }} 
+                     />
+                     <MenuItem 
+                       icon={<AlertTriangle size={14} />} 
+                       label="Flag_Archive" 
+                       index="RPT"
+                       onClick={() => {
+                         openReportModal(playlist.id, 'PLAYLIST', playlist.title);
+                         onClose();
+                       }} 
+                     />
+                   </>
+                 )}
+            </div>
+          )}
 
-          {isOwner && (
+          {isOwner && !isDiscoverWeekly && (
             <>
               <div className="border-t border-white/10" />
               <div className="py-1 bg-white/[0.01]">

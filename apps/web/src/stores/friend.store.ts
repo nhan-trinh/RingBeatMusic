@@ -72,6 +72,7 @@ export const useFriendStore = create<FriendState>((set, get) => ({
     get().fetchActivities();
 
     // 2. Lắng nghe socket
+    socketService.off('friend:activity_update');
     socketService.on('friend:activity_update', (payload: any) => {
       get().updateActivity(payload);
     });

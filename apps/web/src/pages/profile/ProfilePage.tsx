@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { api } from '../../lib/api';
@@ -16,6 +16,7 @@ export const ProfilePage = () => {
   const { user: currentUser } = useAuthStore();
   const { openReportModal } = useUIStore();
   const queryClient = useQueryClient();
+  const [isMutating, setIsMutating] = useState(false);
 
   const isOwnProfile = !id || id === currentUser?.id;
   const targetId = id || currentUser?.id;
@@ -44,24 +45,34 @@ export const ProfilePage = () => {
   });
 
   const handleFollow = async () => {
-    if (!profile || isOwnProfile) return;
+    if (!profile || isOwnProfile || isMutating) return;
     try {
+      setIsMutating(true);
       await api.post(`/users/${profile.id}/follow`);
       toast.success('Registry Link Established');
-      queryClient.invalidateQueries({ queryKey: ['user-profile', targetId] });
+      // Đợi refetch xong để UI đồng bộ hoàn toàn
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', targetId] });
     } catch (error) {
       console.error('Follow failed:', error);
+      toast.error('Failed to establish registry link');
+    } finally {
+      setIsMutating(false);
     }
   };
 
   const handleUnfollow = async () => {
-    if (!profile || isOwnProfile) return;
+    if (!profile || isOwnProfile || isMutating) return;
     try {
+      setIsMutating(true);
       await api.delete(`/users/${profile.id}/unfollow`);
       toast.info('Registry Link Terminated');
-      queryClient.invalidateQueries({ queryKey: ['user-profile', targetId] });
+      // Đợi refetch xong
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', targetId] });
     } catch (error) {
       console.error('Unfollow failed:', error);
+      toast.error('Failed to terminate registry link');
+    } finally {
+      setIsMutating(false);
     }
   };
 
@@ -158,15 +169,54 @@ export const ProfilePage = () => {
             <div className="flex flex-wrap items-center gap-4 mt-8">
               {!isOwnProfile && (
                 <button
+                  disabled={isMutating}
                   onClick={profile.isFollowing ? handleUnfollow : handleFollow}
                   className={cn(
-                    "px-10 py-4 font-black uppercase tracking-[0.2em] text-[11px] transition-all duration-500",
-                    profile.isFollowing
-                      ? "border border-white text-white hover:bg-white hover:text-black"
-                      : "bg-[#1db954] text-black border border-[#1db954] hover:bg-white hover:border-white shadow-[10px_10px_0px_rgba(29,185,84,0.1)]"
+                    "relative overflow-hidden px-10 py-4 font-black uppercase tracking-[0.2em] text-[11px] transition-all duration-500 min-w-[260px] flex items-center justify-center gap-2",
+                    isMutating
+                      ? "bg-[#050505] text-[#1db954] border border-[#1db954]/20 cursor-not-allowed shadow-none"
+                      : profile.isFollowing
+                        ? "border border-white text-white hover:bg-white hover:text-black"
+                        : "bg-[#1db954] text-black border border-[#1db954] hover:bg-white hover:border-white shadow-[10px_10px_0px_rgba(29,185,84,0.1)]"
                   )}
                 >
-                  {profile.isFollowing ? 'Halt_Observation' : 'Initialize_Link'}
+                  {isMutating ? (
+                    <>
+                      {/* Neon Green Laser sweep background */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-[#1db954]/10 to-transparent pointer-events-none"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                      />
+                      {/* Bottom glowing laser line */}
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#1db954] shadow-[0_0_12px_#1db954] pointer-events-none"
+                        initial={{ scaleX: 0, originX: 0 }}
+                        animate={{ scaleX: [0, 1, 1, 0], originX: [0, 0, 1, 1] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      />
+                      
+                      {/* Cyber Telemetry Blinking Text */}
+                      <span className="relative z-10 flex items-center gap-2 tracking-[0.2em] font-mono text-[9px] font-bold text-[#1db954]">
+                        <motion.span
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ repeat: Infinity, duration: 0.6, ease: "steps(2)" as any }}
+                        >
+                          ⚡
+                        </motion.span>
+                        {profile.isFollowing ? 'TERMINATING_LINK' : 'ESTABLISHING_LINK'}
+                        <motion.span
+                          animate={{ opacity: [0, 1, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.6, ease: "steps(2)" as any }}
+                        >
+                          _
+                        </motion.span>
+                      </span>
+                    </>
+                  ) : (
+                    profile.isFollowing ? 'Halt_Observation' : 'Initialize_Link'
+                  )}
                 </button>
               )}
 

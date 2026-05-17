@@ -109,11 +109,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     // Luôn cố gắng connect socket trước
     socketService.connect();
 
-    // Đảm bảo chỉ đăng ký listener một lần duy nhất
-    if (get().isInitialized) return;
-
     const socket = socketService.getSocket();
     if (socket) {
+      // Xóa listener cũ để tránh duplicate khi hot-reload
+      socket.off('new_notification');
+      
       socket.on('new_notification', (n: Notification) => {
         console.log('📩 Nhận thông báo mới realtime:', n);
         get().addNotification(n);
