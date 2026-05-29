@@ -239,12 +239,10 @@ export const Topbar = () => {
 
                       <button
                         className="w-full text-left flex items-center justify-between px-5 py-4 group hover:bg-white transition-all mt-2"
-                        onClick={async () => { 
-                          try {
-                            await api.post('/auth/logout');
-                          } catch (e) {
+                        onClick={() => { 
+                          api.post('/auth/logout').catch((e) => {
                             console.error('Logout API failed', e);
-                          }
+                          });
                           logout(); 
                           setShowMenu(false); 
                           navigate('/login'); 

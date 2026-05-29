@@ -154,8 +154,8 @@ export const AdminLayout = () => {
                     <ExternalLink size={16} /> User App
                   </Link>
                   <button 
-                    onClick={async () => {
-                      try { await api.post('/auth/logout'); } catch(e) {}
+                    onClick={() => {
+                      api.post('/auth/logout').catch(() => {});
                       logout();
                       navigate('/login');
                     }}
